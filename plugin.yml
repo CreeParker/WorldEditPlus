@@ -1,0 +1,38 @@
+name: WorldEditPlus
+main: WorldEditPlus\WorldEditPlus
+version: 0.1
+api:
+- 3.0.0-ALPHA7
+- 3.0.0-ALPHA8
+- 3.0.0-ALPHA9
+- 3.0.0-ALPHA10
+- 3.0.0-ALPHA11
+- 3.0.0-ALPHA12
+- 3.0.0-ALPHA13
+- 3.0.0-ALPHA14
+- 3.0.0-ALPHA15
+- 3.0.0-ALPHA16
+- 3.0.0-ALPHA17
+author: CreeParker
+website: https://twitter.com/cree_parker
+commands:
+  fill:
+    description: 領域の一部または全体を指定したブロックで埋める。
+    usage: /fill
+    permission: op
+  clone:
+    description: 1つの領域から別の領域にブロックを複製する。
+    usage: /clone
+    permission: op
+  undo:
+    description: 変更した領域のバックアップを復元します。
+    usage: /undo <バックアップナンバー>
+    permission: op
+  cancel:
+    description: 現在の実行中の処理を止めます。
+    usage: /cancel
+    permission: op
+  e:
+    description: 始点と終点を消去します。
+    usage: /e
+    permission: op
