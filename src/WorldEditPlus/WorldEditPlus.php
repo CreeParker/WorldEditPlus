@@ -35,6 +35,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 
 	public function onEnable(){
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
+		
 		define('SET', 'set');
 		define('REPLACE', 'replace');
 		define('OUTLINE', 'outline');
@@ -51,6 +52,11 @@ class WorldEditPlus extends PluginBase implements Listener{
 		$this->fill = [SET, OUTLINE, HOLLOW, KEEP, REPLACE];
 		$this->mask = [REPLACE, FILTERED, MASKED];
 		$this->clone = [NORMAL, FORCE, MOVE];
+
+		$this->rand = [
+			'fill' => mt_rand(),
+			'clone' => mt_rand()
+		];
 	}
 
 	public function onDataPacket(DataPacketReceiveEvent $event){
@@ -61,10 +67,11 @@ class WorldEditPlus extends PluginBase implements Listener{
 				$id = $packet->formId;
 				$player = $event->getPlayer();
 				$name = $player->getLowerCaseName();
-				$position = $this->setting[$name]['position'];
-				if($id == 0){
+				if($id == $this->rand['fill']){
+					$position = $this->setting[$name]['position'];
 					$this->fill($player, $position['start'], $position['end'], $data[0], $this->fill[$data[1]], $data[2]);
-				}elseif($id == 1){
+				}elseif($id == $this->rand['clone']){
+					$position = $this->setting[$name]['position'];
 					$level = $this->getServer()->getLevelByName($this->setting[$name]['list'][$data[3]]);
 					if(isset($level)){
 						$destination = new Position($data[0], $data[1], $data[2], $level);
@@ -85,7 +92,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 				if(isset($this->setting[$name]['position']['start'], $this->setting[$name]['position']['end'])){
 		 			switch($label){
 		 				case 'fill':
-		 					$form = UI::createCustomForm(0);
+		 					$form = UI::createCustomForm($this->rand['fill']);
 		 					$form->setTitle('/fill コントローラー');
 		 					$form->addContent((new Input)->text('設置ブロック')->placeholder('ID 名前(カンマ(,)区切りでランダム設置)'));
 							$form->addContent((new Dropdown)->text(
@@ -101,7 +108,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 							UI::sendForm($sender, $form);
 		 					break;
 		 				case 'clone':
-		 					$form = UI::createCustomForm(1);
+		 					$form = UI::createCustomForm($this->rand['clone']);
 		 					$form->setTitle('/clone コントローラー');
 		 					$floor = $sender->floor();
 		 					$form->addContent((new Input)->text('コピー先 X')->placeholder('int')->default($floor->x));
@@ -228,7 +235,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 		}
 	}
 
-	public function fill(Player $player, Position $start, Position $end, $block, $option = SET, $replace = ''){
+	public function fill(Player $player, Position $start, Position $end, string $block, string $option = SET, string $replace = ''){
 		switch($option){
 			case SET:
 			case REPLACE:
@@ -242,6 +249,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 					$replace = $option == REPLACE ? $this->fromString($replace) : true; 
 					if($block !== false and $replace !== false){
 						$range = $this->getRange($start, $end);
+						$name = $player->getLowerCaseName();
 						$scheduler = new class($this, $player, $start, $end, $block, $option, $replace, $range) extends PluginTask{
 
 							public $a = 0;
@@ -326,26 +334,22 @@ class WorldEditPlus extends PluginBase implements Listener{
 								$x = $block->x;
 								$y = $block->y;
 								$z = $block->z;
-								if($x == $this->max['x'] or $x == $this->min['x'])
-									return $this->set();
-								if($y == $this->max['y'] or $y == $this->min['y'])
-									return $this->set();
-								if($z == $this->max['z'] or $z == $this->min['z'])
-									return $this->set();
-								return false;
+								if($x != $this->max['x'] and $x != $this->min['x'])
+									if($y != $this->max['y'] and $y != $this->min['y'])
+										if($z != $this->max['z'] and $z != $this->min['z'])
+											return false;
+								return $this->set();
 							}
 
 							public function hollow($block){
 								$x = $block->x;
 								$y = $block->y;
 								$z = $block->z;
-								if($x == $this->max['x'] or $x == $this->min['x'])
-									return $this->set();
-								if($y == $this->max['y'] or $y == $this->min['y'])
-									return $this->set();
-								if($z == $this->max['z'] or $z == $this->min['z'])
-									return $this->set();
-								return $this->air;
+								if($x != $this->max['x'] and $x != $this->min['x'])
+									if($y != $this->max['y'] and $y != $this->min['y'])
+										if($z != $this->max['z'] and $z != $this->min['z'])
+											return $this->air;
+								return $this->set();
 							}
 
 							public function keep($block){
@@ -356,7 +360,6 @@ class WorldEditPlus extends PluginBase implements Listener{
 
 						};
 						$ceil = ceil(($range['count']['y'] * $range['count']['z']) / 300);
-						$name = $player->getLowerCaseName();
 						$this->setting[$name]['scheduler'] = $this->getServer()->getScheduler()->scheduleRepeatingTask($scheduler, $ceil);
 					}else{
 						$player->sendMessage('無効なブロックが含まれています');
@@ -371,7 +374,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 		}
 	}
 
-	public function clone(Player $player, Position $start, Position $end, Position $destination, $mask = REPLACE, $clone = NORMAL, $replace = ''){
+	public function clone(Player $player, Position $start, Position $end, Position $destination, string $mask = REPLACE, string $clone = NORMAL, string $replace = ''){
 		switch($mask){
 			case FILTERED:
 			case MASKED:
@@ -386,6 +389,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 							$replace = $mask == FILTERED ? $this->fromString($replace) : true; 
 							if($replace !== false){
 								$range = $this->getRange($start, $end);
+								$name = $player->getLowerCaseName();
 								$scheduler = new class($this, $player, $start, $end, $destination, $mask, $clone, $replace, $range) extends PluginTask{
 
 									public $a = 0;
@@ -501,7 +505,6 @@ class WorldEditPlus extends PluginBase implements Listener{
 
 								};
 								$ceil = ceil(($range['count']['y'] * $range['count']['z']) / 300);
-								$name = $player->getLowerCaseName();
 								$this->setting[$name]['scheduler'] = $this->getServer()->getScheduler()->scheduleRepeatingTask($scheduler, $ceil);
 							}else{
 								$player->sendMessage('無効なブロックが含まれています');
