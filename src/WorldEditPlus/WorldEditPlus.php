@@ -35,7 +35,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 
 	public function onEnable(){
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
-		
+
 		define('SET', 'set');
 		define('REPLACE', 'replace');
 		define('OUTLINE', 'outline');
@@ -88,13 +88,13 @@ class WorldEditPlus extends PluginBase implements Listener{
 		#var_dump($args[0], $args[1], $args[0] <= $args[1]);
  		if($sender instanceof Player){
 			$name = $sender->getLowerCaseName();
-			if(!isset($this->setting[$name]['scheduler'])){
-				if(isset($this->setting[$name]['position']['start'], $this->setting[$name]['position']['end'])){
-		 			switch($label){
-		 				case 'fill':
-		 					$form = UI::createCustomForm($this->rand['fill']);
-		 					$form->setTitle('/fill コントローラー');
-		 					$form->addContent((new Input)->text('設置ブロック')->placeholder('ID 名前(カンマ(,)区切りでランダム設置)'));
+ 			switch($label){
+ 				case 'fill':
+					if(!isset($this->setting[$name]['scheduler'])){
+						if(isset($this->setting[$name]['position']['start'], $this->setting[$name]['position']['end'])){
+	 						$form = UI::createCustomForm($this->rand['fill']);
+	 						$form->setTitle('/fill コントローラー');
+	 						$form->addContent((new Input)->text('設置ブロック')->placeholder('ID 名前(カンマ(,)区切りでランダム設置)'));
 							$form->addContent((new Dropdown)->text(
 								"オプション\n".
 								"* set : 全て設置ブロックにする\n".
@@ -102,12 +102,19 @@ class WorldEditPlus extends PluginBase implements Listener{
 								"* hollow : 内側を空気に外側を設置ブロックにする\n".
 								"* keep : 空気を設置ブロックにする\n".
 								"* replace : 置き換えブロックを設置ブロックにする"
-
 							)->options($this->fill));
-		 					$form->addContent((new Input)->text('置き換えブロック(replaceの時のみ)')->placeholder('ID 名前(カンマ(,)区切りで複数指定)'));
+	 						$form->addContent((new Input)->text('置き換えブロック(replaceの時のみ)')->placeholder('ID 名前(カンマ(,)区切りで複数指定)'));
 							UI::sendForm($sender, $form);
-		 					break;
-		 				case 'clone':
+						}else{
+							$sender->sendMessage('範囲を指定してください');
+						}
+					}else{
+						$sender->sendMessage('実行中です');
+					}
+ 					break;
+ 				case 'clone':
+					if(!isset($this->setting[$name]['scheduler'])){
+						if(isset($this->setting[$name]['position']['start'], $this->setting[$name]['position']['end'])){
 		 					$form = UI::createCustomForm($this->rand['clone']);
 		 					$form->setTitle('/clone コントローラー');
 		 					$floor = $sender->floor();
@@ -132,25 +139,37 @@ class WorldEditPlus extends PluginBase implements Listener{
 							)->options($this->clone));
 		 					$form->addContent((new Input)->text('指定ブロック(マスクモードのfilteredの時のみ)')->placeholder('ID 名前(カンマ(,)区切りで複数指定)'));
 							UI::sendForm($sender, $form);
-		 					break;
-		 				case 'e':
-							unset($this->setting[$name]['position']);
-		 					break;
-		 			}
-				}
-				if($label == 'undo'){
-					if(!isset($args[0])) return false;
-					$this->undo($sender, $args[0]);
-				}else{
-					$sender->sendMessage('範囲を指定してください');
-				}
-	 		}elseif($label == 'cancel'){
-				$this->setting[$name]['scheduler']->cancel();
-				$sender->addTitle('キャンセルされました');
-				unset($this->setting[$name]['scheduler']);
-			}else{
-				$sender->sendMessage('実行中です');
-			}
+						}else{
+							$sender->sendMessage('範囲を指定してください');
+						}
+					}else{
+						$sender->sendMessage('実行中です');
+					}
+ 					break;
+				case 'undo':
+					if(!isset($this->setting[$name]['scheduler'])){
+						if(!isset($args[0])) return false;
+						$this->undo($sender, $args[0]);
+					}else{
+						$sender->sendMessage('実行中です');
+					}
+					break;
+				case 'cancel':
+					if(isset($this->setting[$name]['scheduler'])){
+						$this->setting[$name]['scheduler']->cancel();
+						$sender->addTitle('キャンセルされました');
+						unset($this->setting[$name]['scheduler']);
+					}else{
+						$sender->sendMessage('実行中の処理はありません');
+					}
+					break;
+				case 'e':
+					unset($this->setting[$name]['position']);
+					$sender->sendMessage('始点と終点を消去しました');
+					break;
+ 			}
+		}else{
+			$sender->sendMessage('コンソールからは操作できません');
 		}
 		return true;
 	}

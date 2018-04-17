@@ -1,6 +1,6 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 0.3
+version: 0.4
 api:
 - 3.0.0-ALPHA7
 - 3.0.0-ALPHA8
