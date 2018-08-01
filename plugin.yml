@@ -1,6 +1,6 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 0.5
+version: 1.1
 api: 3.1.1
 author: CreeParker
 website: https://twitter.com/cree_parker
@@ -13,10 +13,6 @@ commands:
     description: 1つの領域から別の領域にブロックを複製する。
     usage: /clone
     permission: op
-  undo:
-    description: 変更した領域のバックアップを復元します。
-    usage: /undo <バックアップナンバー>
-    permission: op
   cancel:
     description: 現在の実行中の処理を止めます。
     usage: /cancel
@@ -24,12 +20,4 @@ commands:
   e:
     description: 始点と終点を消去します。
     usage: /e
-    permission: op
-  sphere:
-    description: 球を作る。
-    usage: /sphere
-    permission: op
-  cylinder:
-    description: 円を作る。
-    usage: /cylinder
     permission: op
