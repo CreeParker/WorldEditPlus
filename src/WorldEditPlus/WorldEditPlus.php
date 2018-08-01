@@ -12,177 +12,171 @@ use pocketmine\event\Listener;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginBase;
-use pocketmine\Player;
-
-use pocketmine\Server;
-use pocketmine\scheduler\PluginTask;
-use pocketmine\scheduler\ServerScheduler;
-use pocketmine\item\ItemIds;
 use pocketmine\level\Position;
+use pocketmine\Player;
+use pocketmine\Server;
+use pocketmine\scheduler\Task;
 use pocketmine\level\Level;
-
-use RuinPray\ui\UI;
-use RuinPray\ui\elements\Dropdown;
-use RuinPray\ui\elements\Input;
-use RuinPray\ui\elements\Label;
-use RuinPray\ui\elements\Slider;
-use RuinPray\ui\elements\StepSlider;
-use RuinPray\ui\elements\Toggle;
-use pocketmine\event\server\DataPacketReceiveEvent;
-use pocketmine\network\mcpe\protocol\ModalFormResponsePacket;
 
 class WorldEditPlus extends PluginBase implements Listener{
 
 	public function onEnable(){
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
-
-		define('SET', 'set');
-		define('REPLACE', 'replace');
-		define('OUTLINE', 'outline');
-		define('HOLLOW', 'hollow');
-		define('KEEP', 'keep');
-
-		define('FILTERED', 'filtered');
-		define('MASKED', 'masked');
-
-		define('FORCE', 'force');
-		define('MOVE', 'move');
-		define('NORMAL', 'normal');
-
-		$this->fill = [SET, OUTLINE, HOLLOW, KEEP, REPLACE];
-		$this->mask = [REPLACE, FILTERED, MASKED];
-		$this->clone = [NORMAL, FORCE, MOVE];
-
-		$this->rand = [
-			'fill' => mt_rand(),
-			'clone' => mt_rand()
-		];
 	}
 
-	public function onDataPacket(DataPacketReceiveEvent $event){
-		$packet = $event->getPacket();
-		if($packet instanceof ModalFormResponsePacket){
-			$data = json_decode($packet->formData);
-			if(isset($data)){
-				$id = $packet->formId;
-				$player = $event->getPlayer();
-				$name = $player->getLowerCaseName();
-				if($id == $this->rand['fill']){
-					$position = $this->setting[$name]['position'];
-					$this->fill($player, $position['start'], $position['end'], $data[0], $this->fill[$data[1]], $data[2]);
-				}elseif($id == $this->rand['clone']){
-					$position = $this->setting[$name]['position'];
-					$level = $this->getServer()->getLevelByName($this->setting[$name]['list'][$data[3]]);
-					if(isset($level)){
-						$destination = new Position($data[0], $data[1], $data[2], $level);
-						$this->clone($player, $position['start'], $position['end'], $destination, $this->mask[$data[4]], $this->clone[$data[5]], $data[6]);
-					}else{
-						$player->sendMessage('ワールドが存在しません');
-					}
-				}
-			}
-		}
-	}
+	//WorldEditPlusで使用しているグローバル変数
+	//Playerオブジェクト
+	//- wep_scheduler = スケジューラーが動いているかに使う
+	//  保存内容 : schedulerオブジェクトの有無
+	//- wep_start = 始点の情報保存に使う
+	//  保存内容 : [
+	//    x => 始点X,
+	//    y => 始点Y,
+	//    z => 始点Z,
+	//    level => 始点ワールド
+	//  ]
+	//- wep_end = 終点の情報保存に使う
+	//  保存内容 : [
+	//    x => 終点X,
+	//    y => 終点Y,
+	//    z => 終点Z,
+	//    level => 終点ワールド
+	//  ]
+
+	//fill cloneのモード(フォームとエラー防止に必須)
+	public $option = ['set', 'outline', 'hollow', 'keep', 'replace'];
+	public $mask = ['replace', 'filtered', 'masked'];
+	public $clone = ['normal', 'force', 'move'];
+
+
+#####################################################################
+
 
 	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-		#var_dump($args[0], $args[1], $args[0] <= $args[1]);
- 		if($sender instanceof Player){
-			$name = $sender->getLowerCaseName();
- 			switch($label){
- 				case 'fill':
-					if(!isset($this->setting[$name]['scheduler'])){
-						if(isset($this->setting[$name]['position']['start'], $this->setting[$name]['position']['end'])){
-	 						$form = UI::createCustomForm($this->rand['fill']);
-	 						$form->setTitle('/fill コントローラー');
-	 						$form->addContent((new Input)->text('設置ブロック')->placeholder('ID 名前(カンマ(,)区切りでランダム設置)'));
-							$form->addContent((new Dropdown)->text(
-								"オプション\n".
-								"* set : 全て設置ブロックにする\n".
-								"* outline : 外側を設置ブロックにする\n".
-								"* hollow : 内側を空気に外側を設置ブロックにする\n".
-								"* keep : 空気を設置ブロックにする\n".
-								"* replace : 置き換えブロックを設置ブロックにする"
-							)->options($this->fill));
-	 						$form->addContent((new Input)->text('置き換えブロック(replaceの時のみ)')->placeholder('ID 名前(カンマ(,)区切りで複数指定)'));
-							UI::sendForm($sender, $form);
+		switch($label){
+			case 'fill':
+				//他の処理が実行してないか確認する
+				if(!isset($sender->wep_scheduler)){
+					//プレイヤーが送信した後の処理(コールバック)
+					$callback = function($player, $data){
+						if(!isset($data)) return;
+						//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+						$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
+						$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+						if($check_start and $check_end){
+							//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
+							$level_start = $player->wep_start['level'] ?? $player->getLevel();
+							$level_end = $player->wep_end['level'] ?? $player->getLevel();
+							//送られてきた座標をPositionオブジェクトに変換する
+							$position_start = new Position($data[0], $data[1], $data[2], $level_start);
+							$position_end = new Position($data[3], $data[4], $data[5], $level_end);
+							//fillを実行する
+							$this->fill($player, $position_start, $position_end, $data[6], $this->option[$data[7]], $data[8]);
 						}else{
-							$sender->sendMessage('範囲を指定してください');
+							$player->sendMessage('座標の入力に誤りがあります');
 						}
-					}else{
-						$sender->sendMessage('実行中です');
-					}
- 					break;
- 				case 'clone':
-					if(!isset($this->setting[$name]['scheduler'])){
-						if(isset($this->setting[$name]['position']['start'], $this->setting[$name]['position']['end'])){
-		 					$form = UI::createCustomForm($this->rand['clone']);
-		 					$form->setTitle('/clone コントローラー');
-		 					$floor = $sender->floor();
-		 					$form->addContent((new Input)->text('コピー先 X')->placeholder('int')->default($floor->x));
-		 					$form->addContent((new Input)->text('コピー先 Y')->placeholder('int')->default($floor->y));
-		 					$form->addContent((new Input)->text('コピー先 Z')->placeholder('int')->default($floor->z));
-		 					$level = $sender->getLevel();
-		 					$list = $this->getLevelList($level);
-		 					$this->setting[$name]['list'] = $list;
-		 					$form->addContent((new Dropdown)->text('コピー先 ワールド')->options($list));
-							$form->addContent((new Dropdown)->text(
-								"マスクモード\n".
-								"* replace : 全てをコピー\n".
-								"* filtered : 指定ブロックのみコピー\n".
-								"* masked : 空気以外をコピー"
-							)->options($this->mask));
-							$form->addContent((new Dropdown)->text(
-								"クローンモード\n".
-								"* normal : 通常のモード\n".
-								"* force : コピー元に重なっても強制実行\n".
-								"* move : クローンしてコピー元を空気にします"
-							)->options($this->clone));
-		 					$form->addContent((new Input)->text('指定ブロック(マスクモードのfilteredの時のみ)')->placeholder('ID 名前(カンマ(,)区切りで複数指定)'));
-							UI::sendForm($sender, $form);
+					};
+					//始点終点を含めたフォームを取得 or コールバックを登録する
+					$form = $this->getDefaultForm($callback, $sender);
+					$form->addInput('①ブロック', 'string');
+					$form->addDropdown(
+						"オプション\n".
+						"* set : 全てを①ブロックにする\n".
+						"* outline : 外側を①ブロックにする\n".
+						"* hollow : 内側を空気に外側を①ブロックにする\n".
+						"* keep : 空気を①ブロックにする\n".
+						"* replace : ②ブロックを①ブロックにする"
+					, $this->option);
+					$form->addInput('②ブロック', 'string');
+					$form->sendToPlayer($sender);
+				}else{
+					$sender->sendMessage('他の処理が実行中です');
+				}
+				break;
+ 			case 'clone':
+				if(!isset($sender->wep_scheduler)){
+					//プレイヤーが送信した後の処理(コールバック)
+					$callback = function($player, $data){
+						if(!isset($data)) return;
+						//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+						$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
+						$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+						$check_clone = $this->checkPosition($data[6], $data[7], $data[8]);
+						if($check_start and $check_end and $check_clone){
+							$level_player = $player->getLevel();
+							//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
+							$level_start = $player->wep_start['level'] ?? $level_player;
+							$level_end = $player->wep_end['level'] ?? $level_player;
+							//送られてきた座標をPositionオブジェクトに変換する
+							$position_start = new Position($data[0], $data[1], $data[2], $level_start);
+							$position_end = new Position($data[3], $data[4], $data[5], $level_end);
+							$destination = new Position($data[6], $data[7], $data[8], $level_player);
+							//cloneを実行する
+							$this->clone($player, $position_start, $position_end, $destination, $this->mask[$data[9]], $this->clone[$data[10]], $data[11]);
 						}else{
-							$sender->sendMessage('範囲を指定してください');
+							$player->sendMessage('座標の入力に誤りがあります');
 						}
-					}else{
-						$sender->sendMessage('実行中です');
-					}
- 					break;
-				case 'undo':
-					if(!isset($this->setting[$name]['scheduler'])){
-						if(!isset($args[0])) return false;
-						$this->undo($sender, $args[0]);
-					}else{
-						$sender->sendMessage('実行中です');
-					}
-					break;
-				case 'cancel':
-					if(isset($this->setting[$name]['scheduler'])){
-						$this->setting[$name]['scheduler']->cancel();
-						$sender->addTitle('キャンセルされました');
-						unset($this->setting[$name]['scheduler']);
-					}else{
-						$sender->sendMessage('実行中の処理はありません');
-					}
-					break;
-				case 'e':
-					unset($this->setting[$name]['position']);
-					$sender->sendMessage('始点と終点を消去しました');
-					break;
- 			}
-		}else{
-			$sender->sendMessage('コンソールからは操作できません');
+					};
+					$form = $this->getDefaultForm($callback, $sender);
+					$form->addInput('§cクローンX', 'int', (int) $sender->x);
+					$form->addInput('§aクローンY', 'int', (int) $sender->y);
+					$form->addInput('§bクローンZ', 'int', (int) $sender->z);
+					$form->addDropdown(
+						"マスクモード\n".
+						"* replace : 全てのブロックをクローンする\n".
+						"* filtered : ①ブロックのみクローンする\n".
+						"* masked : 空気以外をクローンする"
+					, $this->mask);
+					$form->addDropdown(
+						"クローンモード\n".
+						"* normal : コピーする\n".
+						"* force : コピー元に重なっても強制実行する\n".
+						"* move : 移動する"
+					, $this->clone);
+					$form->addInput('①ブロック', 'string');
+					$form->sendToPlayer($sender);
+				}else{
+					$player->sendMessage('他の処理が実行中です');
+				}
+				break;
+			case 'cancel':
+				if(isset($sender->wep_scheduler)){
+					$sender->wep_scheduler->cancel();
+					unset($sender->wep_scheduler);
+					$sender->sendMessage('実行中の処理をキャンセルしました');
+				}else{
+					$sender->sendMessage('実行中の処理はありません');
+				}
+				break;
+			case 'e':
+				unset($sender->wep_start, $sender->wep_end);
+				$sender->sendMessage('始点と終点を消去しました');
+				break;
 		}
 		return true;
 	}
 
-	public function getLevelList($level){
-		$levels = $this->getServer()->getLevels();
-		$key = array_search($level, $levels);
-		unset($levels[$key]);
-		$list[] = $level->getName();
-		foreach($levels as $value)
-			$list[] = $value->getName();
-		return $list;
+	//数字かどうかを判別する(文字列の数字にも有効)
+	public function checkPosition($x, $y, $z){
+		return is_numeric($x) and is_numeric($y) and is_numeric($z);
 	}
+
+	//フォームを作り座標入力欄を追加する
+	public function getDefaultForm($callback, $sender){
+		$form = $this->getServer()->getPluginManager()->getPlugin('FormAPI')->createCustomForm($callback);
+		$form->setTitle('コマンドアシスト');
+		$form->addInput('§c始点X', 'int', $sender->wep_start['x'] ?? '');
+		$form->addInput('§a始点Y', 'int', $sender->wep_start['y'] ?? '');
+		$form->addInput('§b始点Z', 'int', $sender->wep_start['z'] ?? '');
+		$form->addInput('§c終点X', 'int', $sender->wep_end['x'] ?? '');
+		$form->addInput('§a終点Y', 'int', $sender->wep_end['y'] ?? '');
+		$form->addInput('§b終点Z', 'int', $sender->wep_end['z'] ?? '');
+		return $form;
+	}
+
+
+#####################################################################
+
 
 	public function BlockBreak(BlockBreakEvent $event){
 		$this->setPosition($event);
@@ -192,61 +186,372 @@ class WorldEditPlus extends PluginBase implements Listener{
 		$this->setPosition($event);
 	}
 
+	//ブロックで座標を登録する
 	public function setPosition($event){
 		$player = $event->getPlayer();
 		if($player->isOp()){
 			$id = $event->getItem()->getId();
-			if($id == 19){
-				$name = $player->getLowerCaseName();
-				$setting = &$this->setting[$name]['position'];
-				$point = isset($setting['start']) ? isset($setting['end']) ? false : 'end' : 'start';
-				if($point !== false){
+			if($id === 19){
+				//始点か終点か判別して取得する(両方とも登録されていたらfalseを返します)
+				$wich = isset($player->wep_start) ? isset($player->wep_end) ? false : 'wep_end' : 'wep_start';
+				if($wich !== false){
 					$event->setCancelled();
 					$position = $event->getBlock()->asPosition();
-					$setting[$point] = $position;
-					$x = $position->x;
-					$y = $position->y;
-					$z = $position->z;
-					if($point == 'start'){
+					//始点か終点の座標を登録する
+					$player->$wich = [
+						'x' => $x = $position->x,
+						'y' => $y = $position->y,
+						'z' => $z = $position->z,
+						'level' => $position->getLevel()
+					];
+					if($wich === 'wep_start'){
 						$player->sendMessage("始点が設定されました $x, $y, $z");
-					}elseif($point == 'end'){
-						$range = $this->getRange($setting['start'], $setting['end']);
-						$player->sendMessage("終点が設定されました $x, $y, $z ({$range['count']['total']}ブロック)");
+					}elseif($wich === 'wep_end'){
+						$start = $player->wep_start;
+						$position_start = new Position($start['x'], $start['y'], $start['z'], $start['level']);
+						$side = $this->getSide($position_start, $position);
+						$player->sendMessage("終点が設定されました $x, $y, $z (".$side['x'] * $side['y'] * $side['z']."ブロック)");
 					}
 				}
 			}
 		}
 	}
 
-	public function getRange(Position $start, Position $end){
-		$range['max']['x'] = max($start->x, $end->x);
-		$range['max']['y'] = max($start->y, $end->y);
-		$range['max']['z'] = max($start->z, $end->z);
-		$range['min']['x'] = min($start->x, $end->x);
-		$range['min']['y'] = min($start->y, $end->y);
-		$range['min']['z'] = min($start->z, $end->z);
-		$range['count']['x'] = ($range['max']['x'] - $range['min']['x']) + 1;
-		$range['count']['y'] = ($range['max']['y'] - $range['min']['y']) + 1;
-		$range['count']['z'] = ($range['max']['z'] - $range['min']['z']) + 1;
-		$range['count']['total'] = $range['count']['x'] * $range['count']['y'] * $range['count']['z'];
-		$range['next']['x'] = $range['count']['x'] == 1 ? 1 : $start->x <=> $end->x;
-		$range['next']['y'] = $range['count']['y'] == 1 ? 1 : $start->y <=> $end->y;
-		$range['next']['z'] = $range['count']['z'] == 1 ? 1 : $start->z <=> $end->z;
-		return $range;
+
+#####################################################################
+
+
+	public function fill(Player $player, Position $start, Position $end, string $block, string $option = 'set', string $replace = ''){
+		$level_start = $start->getLevel();
+		$level_end = $end->getLevel();
+		//同じワールドか確認する
+		if($level_start == $level_end){
+			//指定されたブロックのオブジェクトを取得します(エラーが出たらfalseを返します)
+			$block = $this->fromString($block);
+			if($block !== false){
+				//オプションが存在するか確認します
+				if(in_array($option, $this->option)){
+					//オプションがreplaceの時に、指定されたブロックのオブジェクトを取得します(エラーが出たらfalseを返します)
+					$replace = $option === 'replace' ? $this->fromString($replace) : true;
+					if($replace !== false){
+						//スケジューラーで処理をする無名クラスです
+						$task = new class($this, $player, $start, $end, $block, $option, $replace) extends Task{
+
+							public function __construct($owner, Player $player, Position $start, Position $end, array $block, string $option, $replace){
+								//ジェネレーターを作成します
+								$this->generator = $this->generator($owner, $player, $start, $end, $option);
+								//設置するブロックのオブジェクト
+								$this->block = $block;
+								//置き換えるブロックのオブジェクト
+								$this->replace = $replace;
+								//x, y ,zの最小値、最大値
+								$this->min = $owner->getMin($start, $end);
+								$this->max = $owner->getMax($start, $end);
+								//空気ブロックのオブジェクト
+								$this->air = Block::get(0);
+							}
+
+							public function onRun(int $tick){
+								//ジェネレータの次の処理を実行します
+								$this->generator->next();
+							}
+
+							public function generator($owner, Player $player, Position $start, Position $end, string $option){
+								//始点のx, y, zを設定します
+								$start_x = $start->x;
+								$start_y = $start->y;
+								$start_z = $start->z;
+								//処理をするワールドを設定します
+								$level = $start->getLevel();
+								//x, y ,zの長さを取得します
+								$side = $owner->getSide($start, $end);
+								//始点から終点に向かう方向を取得します
+								$next = $owner->getNext($start, $end);
+								//進行ゲージを設定します
+								$meter = 100 / $side['x'];
+								$gage = 0;
+								$player_name = $player->getName();
+								$owner->getServer()->broadcastMessage($player_name.'が/fillを実行しました ['.$side['x'] * $side['y'] * $side['z'].'ブロック]');
+								//ジェネレーターを一時停止する
+								yield;
+								for($a = 0; abs($a) < $side['x']; $a += $next['x']){
+									//処理するX座標
+									$x = $start_x + $a;
+									for($b = 0; abs($b) < $side['y']; $b += $next['y']){
+										//処理するY座標
+										$y = $start_y + $b;
+										//Y座標の高低制限を超えてたら下の処理を無視する
+										if($y < 0 or $y > Level::Y_MAX)
+											continue;
+										for($c = 0; abs($c) < $side['z']; $c += $next['z']){
+											//処理するZ座標
+											$z = $start_z + $c;
+											//チャンクが読み込まれていなかったら読み込む
+											if(!$level->isChunkLoaded($x >> 4, $z >> 4))
+												$level->loadChunk($x >> 4, $z >> 4, true);
+											//x, y, zのVector3オブジェクトを取得する
+											$vector = new Vector3($x, $y, $z);
+											//変更前のブロックオブジェクトを取得します
+											$old_block = $level->getBlock($vector);
+											//オプションに応じた処理のブロックオブジェクトを取得します(置き換えない場合はfalseを返します)
+											$new_block = $this->$option($old_block);
+											if($new_block !== false){
+												//変更前のブロックが同じでなかったら置き換えます
+												if((string) $old_block !== (string) $new_block)
+													$level->setBlock($vector, $new_block, true, false);
+												#バックアップ変数設置予定
+											}
+										}
+									}
+									//進行ゲージを進めます
+									$round = round($gage += $meter);
+									$owner->getServer()->broadcastTip("[$player_name] §l§a$round ％ 完了");
+									#バックアップ返す予定
+									yield;
+								}
+								//スケジューラーを止めます
+								$this->getHandler()->cancel();
+								unset($player->wep_scheduler);
+							}
+
+							//setの処理
+							public function set($block = null){
+								$rand = array_rand($this->block);
+								return $this->block[$rand];
+							}
+
+							//replaceの処理
+							public function replace($block){
+								return isset($this->replace[(string) $block]) ? $this->set() : false;
+							}
+
+							//outlineの処理
+							public function outline($block){
+								$x = $block->x;
+								$y = $block->y;
+								$z = $block->z;
+								if($x != $this->min['x'] and $x != $this->max['x'])
+									if($y != $this->min['y'] and $y != $this->max['y'])
+										if($z != $this->min['z'] and $z != $this->max['z'])
+											return false;
+								return $this->set();
+							}
+
+							//hollowの処理
+							public function hollow($block){
+								$x = $block->x;
+								$y = $block->y;
+								$z = $block->z;
+								if($x != $this->min['x'] and $x != $this->max['x'])
+									if($y != $this->min['y'] and $y != $this->max['y'])
+										if($z != $this->min['z'] and $z != $this->max['z'])
+											return $this->air;
+								return $this->set();
+							}
+
+							//keepの処理
+							public function keep($block){
+								return (string) $block === (string) $this->air ? $this->set() : false;
+							}
+
+						};
+						//ブロックの数で処理スピードを計算します
+						$side = $this->getSide($start, $end);
+						$period = ($side['y'] * $side['z']) / 300;
+						//スケジューラーを実行します
+						$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, $period);
+					}else{
+						$player->sendMessage('②ブロックに無効なブロックが含まれています');
+					}
+				}else{
+					$player->sendMessage('無効なオプションです');
+				}
+			}else{
+				$player->sendMessage('①ブロックに無効なブロックが含まれています');
+			}
+		}else{
+			$player->sendMessage('同じワールドで指定してください');
+		}
 	}
 
+	public function clone(Player $player, Position $start, Position $end, Position $destination, string $mask = 'replace', string $clone = 'normal', string $replace = ''){
+		$level_start = $start->getLevel();
+		$level_end = $end->getLevel();
+		//同じワールドか確認する
+		if($level_start == $level_end){
+			//マスクモードが存在するか確認します
+			if(in_array($mask, $this->mask)){
+				//クローンモードが存在するか確認します
+				if(in_array($clone, $this->clone)){
+					//マスクモードがfilteredの時に、指定されたブロックのオブジェクトを取得します(エラーが出たらfalseを返します)
+					$replace = $mask === 'filtered' ? $this->fromString($replace) : true;
+					if($replace !== false){
+						//スケジューラーで処理をする無名クラスです
+						$task = new class($this, $player, $start, $end, $destination, $mask, $clone, $replace) extends Task{
+
+							public function __construct($owner, Player $player, Position $start, Position $end, Position $destination, string $mask, string $clone, $replace){
+								//ジェネレーターを作成します
+								$this->generator = $this->generator($owner, $player, $start, $end, $destination, $mask, $clone);
+								//指定したブロックのオブジェクト
+								$this->replace = $replace;
+								//x, y ,zの最小値、最大値
+								$this->min = $owner->getMin($start, $end);
+								$this->max = $owner->getMax($start, $end);
+								//空気ブロックのオブジェクト
+								$this->air = Block::get(0);
+							}
+
+							public function onRun(int $tick){
+								//ジェネレータの次の処理を実行します
+								$this->generator->next();
+							}
+
+							public function generator($owner, Player $player, Position $start, Position $end, Position $destination, string $mask, string $clone){
+								//始点のx, y, zを設定します
+								$start_x = $start->x;
+								$start_y = $start->y;
+								$start_z = $start->z;
+								//クローン先のx, y, zを設定します
+								$destination_x = $destination->x;
+								$destination_y = $destination->y;
+								$destination_z = $destination->z;
+								//処理をするワールドを設定します
+								$start_level = $this->level = $start->getLevel();
+								$destination_level = $destination->getLevel();
+								//クローン元とクローン先のワールドが同じかどうか
+								$this->normal = $start_level == $destination_level;
+								//x, y ,zの長さを取得します
+								$side = $owner->getSide($start, $end);
+								//始点から終点に向かう方向を取得します
+								$next = $owner->getNext($start, $end);
+								//進行ゲージを設定します
+								$meter = 100 / $side['x'];
+								$gage = 0;
+								$player_name = $player->getName();
+								$owner->getServer()->broadcastMessage($player_name.'が/cloneを実行しました ['.$side['x'] * $side['y'] * $side['z'].'ブロック]');
+								//ジェネレーターを一時停止する
+								yield;
+								for($a = 0; abs($a) < $side['x']; $a += $next['x']){
+									//処理するクローン元のX座標
+									$old_x = $start_x + $a;
+									//処理するクローン先のX座標
+									$new_x = $destination_x + $a;
+									for($b = 0; abs($b) < $side['y']; $b += $next['y']){
+										//処理するクローン元のY座標
+										$old_y = $start_y + $b;
+										//処理するクローン先のX座標
+										$new_y = $destination_y + $b;
+										//Y座標の高低制限を超えてたら下の処理を無視する
+										if($old_y < 0 or $old_y > Level::Y_MAX or $new_y < 0 or $new_y > Level::Y_MAX)
+											continue;
+										for($c = 0; abs($c) < $side['z']; $c += $next['z']){
+											//処理するクローン元のX座標
+											$old_z = $start_z + $c;
+											//処理するクローン先のX座標
+											$new_z = $destination_z + $c;
+											//クローン元のチャンクが読み込まれていなかったら読み込む
+											if(!$start_level->isChunkLoaded($old_x >> 4, $old_z >> 4))
+												$start_level->loadChunk($old_x >> 4, $old_z >> 4, true);
+											//クローン先のチャンクが読み込まれていなかったら読み込む
+											if(!$destination_level->isChunkLoaded($new_x >> 4, $new_z >> 4))
+												$destination_level->loadChunk($new_x >> 4, $new_z >> 4, true);
+											//クローン元のx, y, zのVector3オブジェクトを取得する
+											$old_vector = new Vector3($old_x, $old_y, $old_z);
+											//クローン元のブロックオブジェクトを取得します
+											$old_block = $start_level->getBlock($old_vector);
+											//クローンするブロックを判別します
+											if($this->$mask($old_block)){
+												//クローン先のブロックオブジェクトを取得します
+												$new_vector = new Vector3($new_x, $new_y, $new_z);
+												//クローンするか確認します
+												if($this->$clone($old_vector, $new_vector)){
+													#$old_block = $destination_level->getBlock($new_vector);
+													#バックアップ変数設置予定
+													$destination_level->setBlock($new_vector, $old_block, true, false);
+												}
+											}
+										}
+									}
+									//進行ゲージを進めます
+									$round = round($gage += $meter);
+									$owner->getServer()->broadcastTip("[$player_name] §l§a$round ％ 完了");
+									#バックアップ返す予定
+									yield;
+								}
+								//スケジューラーを止めます
+								$this->getHandler()->cancel();
+								unset($player->wep_scheduler);
+							}
+
+							//マスクモードのreplaceの処理
+							public function replace(Block $block) : bool{
+								return true;
+							}
+
+							//マスクモードのfilteredの処理
+							public function filtered(Block $block) : bool{
+								return isset($this->replace[(string) $block]);
+							}
+
+							//マスクモードのmaskedの処理
+							public function masked(Block $block) : bool{
+								return (string) $block !== (string) $this->air;
+							}
+
+							//クローンモードのnormalの処理
+							public function normal(Vector3 $old, Vector3 $new) : bool{
+								if($this->normal){
+									$x = $new->x;
+									$y = $new->y;
+									$z = $new->z;
+									if($x >= $this->min['x'] and $x <= $this->max['x'])
+										if($y >= $this->min['y'] and $y <= $this->max['y'])
+											if($z >= $this->min['z'] and $z <= $this->max['z'])
+												return false;
+								}
+								return true;
+							}
+
+							//クローンモードのforceの処理
+							public function force(Vector3 $old, Vector3 $new) : bool{
+								return true;
+							}
+
+							//クローンモードのmoveの処理
+							public function move(Vector3 $old, Vector3 $new) : bool{
+								return $this->level->setBlock($old, $this->air, true, false);
+							}
+
+						};
+						//ブロックの数で処理スピードを計算します
+						$side = $this->getSide($start, $end);
+						$period = ($side['y'] * $side['z']) / 300;
+						//スケジューラーを実行します
+						$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, $period);
+					}else{
+						$player->sendMessage('①ブロックに無効なブロックが含まれています');
+					}
+				}else{
+					$player->sendMessage('無効なクローンモードです');
+				}
+			}else{
+				$player->sendMessage('無効なマスクモードです');
+			}
+		}else{
+			$player->sendMessage('同じワールドで指定してください');
+		}
+	}
+
+	//stringのブロックオブジェクトを取得します
 	public function fromString(string $string){
-		$explode = explode(',', $string);
-		if($explode === false)
-			return false;
 		try{
-			foreach($explode as $value){
-				$item = Item::fromString($value);
-				$block = $item->getBlock();
+			$items = Item::fromString($string, true);
+			foreach($items as $item){
 				$item_name = $item->getName();
+				$block = $item->getBlock();
 				$block_name = $block->getName();
-				if($item_name != $block_name) return false;
-				$blocks[$block_name] = $block;
+				if($item_name !== $block_name) return false;
+				$blocks[(string) $block] = $block;
 			}
 			return $blocks;
 		}catch(\Exception $e){
@@ -254,362 +559,75 @@ class WorldEditPlus extends PluginBase implements Listener{
 		}
 	}
 
-	public function fill(Player $player, Position $start, Position $end, string $block, string $option = SET, string $replace = ''){
-		switch($option){
-			case SET:
-			case REPLACE:
-			case OUTLINE:
-			case HOLLOW:
-			case KEEP:
-				$level_start = $start->getLevel();
-				$level_end   = $end->getLevel();
-				if($level_start == $level_end){
-					$block = $this->fromString($block);
-					$replace = $option == REPLACE ? $this->fromString($replace) : true; 
-					if($block !== false and $replace !== false){
-						$range = $this->getRange($start, $end);
-						$name = $player->getLowerCaseName();
-						$scheduler = new class($this, $player, $start, $end, $block, $option, $replace, $range) extends PluginTask{
 
-							public $a = 0;
+#####################################################################
 
-							public function __construct($owner, $player, $start, $end, $block, $option, $replace, $range){
-								parent::__construct($owner);
-								$this->player = $player;
-								$this->start = $start;
-								$this->block = $block;
-								$this->option = $option;
-								$this->replace = $replace;
 
-								$name = $player->getLowerCaseName();
-								$this->setting = &$owner->setting[$name];
-
-								$number = isset($this->setting['undo']) ? count($this->setting['undo']) : 0;
-								$this->undo = &$this->setting['undo'][$number];
-								$this->undo['start'] = $start;
-								$this->undo['end'] = $end;
-
-								$this->level = $start->getLevel();
-								$this->max = $range['max'];
-								$this->min = $range['min'];
-								$this->count = $range['count'];
-								$this->next = $range['next'];
-
-								$this->meter = 100 / $range['count']['x'];
-								$this->gage = 0;
-
-								$this->air = Block::get(0);
-
-								$owner->getServer()->broadcastMessage("{$name}がブロック変更を実行");
-								$player->sendMessage("バックアップナンバー($number)");
-							}
-
-							public function onRun(int $tick){
-								if(abs($this->a) < $this->count['x']){
-									$x = $this->start->x + $this->a;
-									for($b = 0; abs($b) < $this->count['y']; $b -= $this->next['y']){
-										$y = $this->start->y + $b;
-										if($y < 0 or $y > Level::Y_MAX)
-											continue;
-										for($c = 0; abs($c) < $this->count['z']; $c -= $this->next['z']){
-											$z = $this->start->z + $c;
-											if(!$this->level->isChunkLoaded($x >> 4, $z >> 4))
-												$this->level->loadChunk($x >> 4, $z >> 4, true);
-											$vector = new Vector3($x, $y, $z);
-											$block_old = $this->level->getBlock($vector);
-											$option = $this->option;
-											$block_new = $this->$option($block_old);
-											if($block_new !== false){
-												$name_old = $block_old->getName();
-												$name_new = $block_new->getName();
-												if($name_old != $name_new)
-													$this->level->setBlock($vector, $block_new, true, false);
-
-												$this->undo['backup'][$x][] = $block_old;
-
-											}
-										}
-									}
-									$this->a -= $this->next['x'];
-									$round = round($this->gage += $this->meter);
-									$this->player->addTitle($round.'% 完了');
-								}else{
-									$this->getHandler()->cancel();
-									unset($this->setting['scheduler']);
-								}
-							}
-
-							public function set($block = null){
-								$rand = array_rand($this->block);
-								return $this->block[$rand];
-							}
-
-							public function replace($block){
-								$name = $block->getName();
-								return isset($this->replace[$name]) ? $this->set() : false;
-							}
-
-							public function outline($block){
-								$x = $block->x;
-								$y = $block->y;
-								$z = $block->z;
-								if($x != $this->max['x'] and $x != $this->min['x'])
-									if($y != $this->max['y'] and $y != $this->min['y'])
-										if($z != $this->max['z'] and $z != $this->min['z'])
-											return false;
-								return $this->set();
-							}
-
-							public function hollow($block){
-								$x = $block->x;
-								$y = $block->y;
-								$z = $block->z;
-								if($x != $this->max['x'] and $x != $this->min['x'])
-									if($y != $this->max['y'] and $y != $this->min['y'])
-										if($z != $this->max['z'] and $z != $this->min['z'])
-											return $this->air;
-								return $this->set();
-							}
-
-							public function keep($block){
-								$name = $block->getName();
-								$air_name = $this->air->getName();
-								return $name == $air_name ? $this->set() : false;
-							}
-
-						};
-						$ceil = ceil(($range['count']['y'] * $range['count']['z']) / 300);
-						$this->setting[$name]['scheduler'] = $this->getServer()->getScheduler()->scheduleRepeatingTask($scheduler, $ceil);
-					}else{
-						$player->sendMessage('無効なブロックが含まれています');
-					}
-				}else{
-					$player->sendMessage('同じワールドで指定してください');
-				}
-				break;
-			default:
-				$player->sendMessage('無効なオプションです');
-				break;
-		}
+	//x, y, zの最小値を取得します
+	public function getMin(Vector3 $start, Vector3 $end) : array{
+		return [
+			'x' => min($start->x, $end->x),
+			'y' => min($start->y, $end->y),
+			'z' => min($start->z, $end->z)
+		];
 	}
 
-	public function clone(Player $player, Position $start, Position $end, Position $destination, string $mask = REPLACE, string $clone = NORMAL, string $replace = ''){
-		switch($mask){
-			case FILTERED:
-			case MASKED:
-			case REPLACE:
-				switch($clone){
-					case FORCE:
-					case MOVE:
-					case NORMAL:
-						$level_start = $start->getLevel();
-						$level_end = $end->getLevel();
-						if($level_start == $level_end){
-							$replace = $mask == FILTERED ? $this->fromString($replace) : true; 
-							if($replace !== false){
-								$range = $this->getRange($start, $end);
-								$name = $player->getLowerCaseName();
-								$scheduler = new class($this, $player, $start, $end, $destination, $mask, $clone, $replace, $range) extends PluginTask{
-
-									public $a = 0;
-
-									public function __construct($owner, $player, $start, $end, $destination, $mask, $clone, $replace, $range){
-										parent::__construct($owner);
-										$this->player = $player;
-										$this->start = $start;
-										$this->destination = $destination->floor();
-										$this->mask = $mask;
-										$this->clone = $clone;
-										$this->replace = $replace;
-
-										$name = $player->getLowerCaseName();
-										$this->setting = &$owner->setting[$name];
-
-										$number = isset($this->setting['undo']) ? count($this->setting['undo']) : 0;
-										$this->undo = &$this->setting['undo'][$number];
-										$this->undo['start'] = $start;
-										$this->undo['end'] = $end;
-
-										$this->level_old = $start->getLevel();
-										$this->level_new = $destination->getLevel();
-										$this->max = $range['max'];
-										$this->min = $range['min'];
-										$this->count = $range['count'];
-										$this->next = $range['next'];
-
-										$this->meter = 100 / $range['count']['x'];
-										$this->gage = 0;
-
-										$this->air = Block::get(0);
-
-										$owner->getServer()->broadcastMessage("{$name}がクローンを実行");
-										$player->sendMessage("バックアップナンバー($number)");
-									}
-
-									public function onRun(int $tick){
-										if(abs($this->a) < $this->count['x']){
-											$x = $this->start->x + $this->a;
-											$xd = $this->destination->x + $this->a;
-											for($b = 0; abs($b) < $this->count['y']; $b -= $this->next['y']){
-												$y = $this->start->y + $b;
-												$yd = $this->destination->y + $b;
-												if($y < 0 or $y > Level::Y_MAX or $yd < 0 or $yd > Level::Y_MAX)
-													continue;
-												for($c = 0; abs($c) < $this->count['z']; $c -= $this->next['z']){
-													$z = $this->start->z + $c;
-													$zd = $this->destination->z + $c;
-													if(!$this->level_old->isChunkLoaded($x >> 4, $z >> 4))
-														$this->level_old->loadChunk($x >> 4, $z >> 4, true);
-													if(!$this->level_new->isChunkLoaded($xd >> 4, $zd >> 4))
-														$this->level_new->loadChunk($xd >> 4, $zd >> 4, true);
-													$vector_old = new Vector3($x, $y, $z);
-													$block_new = $this->level_old->getBlock($vector_old);
-													$mask = $this->mask;
-													if($this->$mask($block_new)){
-														$clone = $this->clone;
-														if($this->$clone($vector_old, $xd, $yd, $zd)){
-															$vector_new = new Vector3($xd, $yd, $zd);
-
-															$block_old = $this->level_new->getBlock($vector_new);
-															$this->undo['backup'][$x][] = $block_old;
-
-															$this->level_new->setBlock($vector_new, $block_new, true, false);
-														}
-													}
-
-												}
-											}
-											$this->a -= $this->next['x'];
-											$round = round($this->gage += $this->meter);
-											$this->player->addTitle($round.'% 完了');
-										}else{
-											$this->getHandler()->cancel();
-											unset($this->setting['scheduler']);
-										}
-									}
-
-									public function replace($block){
-										return true;
-									}
-
-									public function filtered($block){
-										$name = $block->getName();
-										return isset($this->replace[$name]);
-									}
-
-									public function masked($block){
-										$name = $block->getName();
-										$air_name = $this->air->getName();
-										return $name != $air_name;
-									}
-
-									public function normal($vector, $x, $y, $z){
-										if($this->level_old == $this->level_new){
-											if($x >= $this->min['x'] and $x <= $this->max['x'])
-												if($y >= $this->min['y'] and $y <= $this->max['y'])
-													if($z >= $this->min['z'] and $z <= $this->max['z'])
-														return false;
-										}
-										return true;
-									}
-
-									public function force($vector, $x, $y, $z){
-										return true;
-									}
-
-									public function move($vector, $x, $y, $z){
-										$this->level_old->setBlock($vector, $this->air, true, false);
-										return true;
-									}
-
-								};
-								$ceil = ceil(($range['count']['y'] * $range['count']['z']) / 300);
-								$this->setting[$name]['scheduler'] = $this->getServer()->getScheduler()->scheduleRepeatingTask($scheduler, $ceil);
-							}else{
-								$player->sendMessage('無効なブロックが含まれています');
-							}
-						}else{
-							$player->sendMessage('同じワールドで指定してください');
-						}
-						break;
-					default:
-						$player->sendMessage('無効なクローンモードです');
-						break;
-				}
-				break;
-			default:
-				$player->sendMessage('無効なマスクモードです');
-				break;
-		}
+	//x, y, zの最大値を取得します
+	public function getMax(Vector3 $start, Vector3 $end) : array{
+		return [
+			'x' => max($start->x, $end->x),
+			'y' => max($start->y, $end->y),
+			'z' => max($start->z, $end->z)
+		];
 	}
 
-	public function undo(Player $player, $number){
-		$name = $player->getLowerCaseName();
-		$undo = $this->setting[$name]['undo'][$number] ?? false;
-		if($undo !== false){
-			$range = $this->getRange($undo['start'], $undo['end']);
-			$scheduler = new class($this, $player, $undo, $range) extends PluginTask{
-
-				public function __construct($owner, $player, $undo, $range){
-					parent::__construct($owner);
-					$this->player = $player;
-					$this->backup = $undo['backup'];
-
-					$name = $player->getLowerCaseName();
-					$this->setting = &$owner->setting[$name];
-
-					$this->meter = 100 / count($this->backup);
-					$this->gage = 0;
-
-					$owner->getServer()->broadcastMessage("{$name}が復元を実行");
-				}
-
-				public function onRun(int $tick){
-					if(!empty($this->backup)){
-						$shift = array_shift($this->backup);
-						foreach($shift as $value){
-							$level = $value->getLevel();
-							$vector = $value->asVector3();
-							$level->setBlock($vector, $value, true, false);
-						}
-						$round = round($this->gage += $this->meter);
-						$this->player->addTitle($round.'% 完了');
-					}else{
-						$this->getHandler()->cancel();
-						unset($this->setting['scheduler']);
-					}
-				}
-
-			};
-
-			$ceil = ceil(($range['count']['y'] * $range['count']['z']) / 300);
-			$this->setting[$name]['scheduler'] = $this->getServer()->getScheduler()->scheduleRepeatingTask($scheduler, $ceil);
-		}else{
-			$player->sendMessage($number.'のバックアップがありません');
-		}
+	//x, y, zの長さを調べて取得します
+	public function getSide(Vector3 $start, Vector3 $end) : array{
+		$min = $this->getMin($start, $end);
+		$max = $this->getMax($start, $end);
+		return [
+			'x' => ($max['x'] - $min['x']) + 1,
+			'y' => ($max['y'] - $min['y']) + 1,
+			'z' => ($max['z'] - $min['z']) + 1
+		];
 	}
 
+	//始点から終点に向かう方向を取得します
+	public function getNext(Vector3 $start, Vector3 $end) : array{
+		return [
+			'x' => $start->x < $end->x ? +1 : -1,
+			'y' => $start->y < $end->y ? +1 : -1,
+			'z' => $start->z < $end->z ? +1 : -1
+		];
+	}
+
+
+#####################################################################
+
+
+	//ブロックの情報を表示させる
 	public function PlayerInteract(PlayerInteractEvent $event){
 		$action = $event->getAction();
 		if($action === 0 or $action === 1){
 			$player = $event->getPlayer();
 			if($player->isOp()){
 				$id = $event->getItem()->getId();
-				$block = $event->getBlock();
-				if($id === 345){
+				if($id === 340){
+					$block = $event->getBlock();
 					$x = $block->x;
 					$y = $block->y;
 					$z = $block->z;
-					$level = $block->getLevel()->getName();
-					$player->sendMessage("このブロックの座標を取得しました $x, $y, $z ($level)");
-				}elseif($id === 347){
 					$name = $block->getName();
 					$id = $block->getId();
 					$meta = $block->getDamage();
-					$player->sendMessage("このブロックの情報を取得しました $name ($id:$meta)");
+					$player->sendMessage("＊$name ($id:$meta) [§c{$x}§r, §a{$y}§r, §b{$z}§r]");
 				}
 			}
 		}
 	}
+
+
+#####################################################################
+
 
 }

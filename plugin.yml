@@ -1,18 +1,7 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 0.4
-api:
-- 3.0.0-ALPHA7
-- 3.0.0-ALPHA8
-- 3.0.0-ALPHA9
-- 3.0.0-ALPHA10
-- 3.0.0-ALPHA11
-- 3.0.0-ALPHA12
-- 3.0.0-ALPHA13
-- 3.0.0-ALPHA14
-- 3.0.0-ALPHA15
-- 3.0.0-ALPHA16
-- 3.0.0-ALPHA17
+version: 0.5
+api: 3.1.1
 author: CreeParker
 website: https://twitter.com/cree_parker
 commands:
@@ -35,4 +24,12 @@ commands:
   e:
     description: 始点と終点を消去します。
     usage: /e
+    permission: op
+  sphere:
+    description: 球を作る。
+    usage: /sphere
+    permission: op
+  cylinder:
+    description: 円を作る。
+    usage: /cylinder
     permission: op
