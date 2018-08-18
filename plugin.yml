@@ -1,23 +1,39 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 1.1
-api: 3.1.1
+version: 2.1
+api: [3.0.0, 4.0.0]
 author: CreeParker
 website: https://twitter.com/cree_parker
 commands:
   fill:
     description: 領域の一部または全体を指定したブロックで埋める。
-    usage: /fill
+    usage: /fill <x1> <y1> <z1> <x2> <y2> <z2> <block> [set|outline|hollow|keep|replace] [block]
     permission: op
   clone:
     description: 1つの領域から別の領域にブロックを複製する。
-    usage: /clone
+    usage: /clone <x1> <y1> <z1> <x2> <y2> <z2> <x3> <y3> <z3> [replace|filtered|masked] [normal|force|move] [block] 
+    permission: op
+  cylinder:
+    description: 円柱の形を作ります。
+    usage: /cylinder <x1> <y1> <z1> <x2> <y2> <z2> <block> <x|y|z>
+    permission: op
+  sphere:
+    description: 球の形を作ります。
+    usage: /sphere <x1> <y1> <z1> <x2> <y2> <z2> <block>
     permission: op
   cancel:
     description: 現在の実行中の処理を止めます。
     usage: /cancel
     permission: op
-  e:
-    description: 始点と終点を消去します。
-    usage: /e
+  wand:
+    description: 始点と終点を決める斧を取り出します。
+    usage: /wand
+    permission: op
+  pos1:
+    description: 始点を設定します。
+    usage: /pos1 [x] [y] [z]
+    permission: 
+  pos2:
+    description: 終点を設定します。
+    usage: /pos2 [x] [y] [z]
     permission: op

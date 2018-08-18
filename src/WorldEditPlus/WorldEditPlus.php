@@ -4,7 +4,7 @@ namespace WorldEditPlus;
 
 use pocketmine\block\Block;
 use pocketmine\command\Command;
-use pocketmine\command\CommandSender;
+use pocketmine\command\CommandSender as Sender;
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 use pocketmine\event\player\PlayerInteractEvent;
@@ -47,96 +47,248 @@ class WorldEditPlus extends PluginBase implements Listener{
 	public $option = ['set', 'outline', 'hollow', 'keep', 'replace'];
 	public $mask = ['replace', 'filtered', 'masked'];
 	public $clone = ['normal', 'force', 'move'];
+	public $direction = ['x', 'y', 'z'];
+	#public $accuracy = ['低', '中', '高', '最高'];
 
 
 #####################################################################
 
 
-	public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
+	public function onCommand(Sender $sender, Command $command, string $label, array $args) : bool{
 		switch($label){
 			case 'fill':
 				//他の処理が実行してないか確認する
 				if(!isset($sender->wep_scheduler)){
-					//プレイヤーが送信した後の処理(コールバック)
-					$callback = function($player, $data){
-						if(!isset($data)) return;
+					if(isset($args[0])){
+						if(!isset($args[6])) return false;
 						//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
-						$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
-						$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+						$check_start = $this->checkPosition($args[0], $args[1], $args[2]);
+						$check_end = $this->checkPosition($args[3], $args[4], $args[5]);
 						if($check_start and $check_end){
-							//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
-							$level_start = $player->wep_start['level'] ?? $player->getLevel();
-							$level_end = $player->wep_end['level'] ?? $player->getLevel();
+							//プレイヤーのワールドを取得する(コンソールはデフォルトワールドを取得します)
+							$sender_level = $sender instanceof Player ? $sender->getLevel() : $this->getServer()->getDefaultLevel();
 							//送られてきた座標をPositionオブジェクトに変換する
-							$position_start = new Position($data[0], $data[1], $data[2], $level_start);
-							$position_end = new Position($data[3], $data[4], $data[5], $level_end);
+							$position_start = new Position($args[0], $args[1], $args[2], $sender_level);
+							$position_end = new Position($args[3], $args[4], $args[5], $sender_level);
+							//入力されてない項目をデフォルトに設定します
+							if(!isset($args[7])) $args[7] = 'set';
+							if(!isset($args[8])) $args[8] = '';
 							//fillを実行する
-							$this->fill($player, $position_start, $position_end, $data[6], $this->option[$data[7]], $data[8]);
+							$this->fill($sender, $position_start, $position_end, $args[6], $args[7], $args[8]);
 						}else{
-							$player->sendMessage('座標の入力に誤りがあります');
+							$sender->sendMessage('座標の入力に誤りがあります');
 						}
-					};
-					//始点終点を含めたフォームを取得 or コールバックを登録する
-					$form = $this->getDefaultForm($callback, $sender);
-					$form->addInput('①ブロック', 'string');
-					$form->addDropdown(
-						"オプション\n".
-						"* set : 全てを①ブロックにする\n".
-						"* outline : 外側を①ブロックにする\n".
-						"* hollow : 内側を空気に外側を①ブロックにする\n".
-						"* keep : 空気を①ブロックにする\n".
-						"* replace : ②ブロックを①ブロックにする"
-					, $this->option);
-					$form->addInput('②ブロック', 'string');
-					$form->sendToPlayer($sender);
+					}elseif($sender instanceof Player){
+						//プレイヤーが送信した後の処理(コールバック)
+						$callback = function($player, $data){
+							if(!isset($data)) return;
+							//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+							$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
+							$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+							if($check_start and $check_end){
+								//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
+								$level_start = $player->wep_start['level'] ?? $player->getLevel();
+								$level_end = $player->wep_end['level'] ?? $player->getLevel();
+								//送られてきた座標をPositionオブジェクトに変換する
+								$position_start = new Position($data[0], $data[1], $data[2], $level_start);
+								$position_end = new Position($data[3], $data[4], $data[5], $level_end);
+								//fillを実行する
+								$this->fill($player, $position_start, $position_end, $data[6], $this->option[$data[7]], $data[8]);
+							}else{
+								$player->sendMessage('座標の入力に誤りがあります');
+							}
+						};
+						//始点終点を含めたフォームを取得 or コールバックを登録する
+						$form = $this->getDefaultForm($callback, $sender);
+						$form->addInput('①ブロック', 'string');
+						$form->addDropdown(
+							"オプション\n".
+							"* set : 全てを①ブロックにする\n".
+							"* outline : 外側を①ブロックにする\n".
+							"* hollow : 内側を空気に外側を①ブロックにする\n".
+							"* keep : 空気を①ブロックにする\n".
+							"* replace : ②ブロックを①ブロックにする"
+						, $this->option);
+						$form->addInput('②ブロック', 'string');
+						$form->sendToPlayer($sender);
+					}else{
+						return false;
+					}
 				}else{
 					$sender->sendMessage('他の処理が実行中です');
 				}
 				break;
  			case 'clone':
 				if(!isset($sender->wep_scheduler)){
-					//プレイヤーが送信した後の処理(コールバック)
-					$callback = function($player, $data){
-						if(!isset($data)) return;
+					if(isset($args[0])){
+						if(!isset($args[8])) return false;
 						//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
-						$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
-						$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
-						$check_clone = $this->checkPosition($data[6], $data[7], $data[8]);
+						$check_start = $this->checkPosition($args[0], $args[1], $args[2]);
+						$check_end = $this->checkPosition($args[3], $args[4], $args[5]);
+						$check_clone = $this->checkPosition($args[6], $args[7], $args[8]);
 						if($check_start and $check_end and $check_clone){
-							$level_player = $player->getLevel();
-							//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
-							$level_start = $player->wep_start['level'] ?? $level_player;
-							$level_end = $player->wep_end['level'] ?? $level_player;
+							//プレイヤーのワールドを取得する(コンソールはデフォルトワールドを取得します)
+							$sender_level = $sender instanceof Player ? $sender->getLevel() : $this->getServer()->getDefaultLevel();
 							//送られてきた座標をPositionオブジェクトに変換する
-							$position_start = new Position($data[0], $data[1], $data[2], $level_start);
-							$position_end = new Position($data[3], $data[4], $data[5], $level_end);
-							$destination = new Position($data[6], $data[7], $data[8], $level_player);
+							$position_start = new Position($args[0], $args[1], $args[2], $sender_level);
+							$position_end = new Position($args[3], $args[4], $args[5], $sender_level);
+							$destination = new Position($args[6], $args[7], $args[8], $sender_level);
+							//入力されてない項目をデフォルトに設定します
+							if(!isset($args[9])) $args[9] = 'replace';
+							if(!isset($args[10])) $args[10] = 'normal';
+							if(!isset($args[11])) $args[11] = '';
 							//cloneを実行する
-							$this->clone($player, $position_start, $position_end, $destination, $this->mask[$data[9]], $this->clone[$data[10]], $data[11]);
+							$this->clone($sender, $position_start, $position_end, $destination, $args[9], $args[10], $args[11]);
 						}else{
-							$player->sendMessage('座標の入力に誤りがあります');
+							$sender->sendMessage('座標の入力に誤りがあります');
 						}
-					};
-					$form = $this->getDefaultForm($callback, $sender);
-					$form->addInput('§cクローンX', 'int', (int) $sender->x);
-					$form->addInput('§aクローンY', 'int', (int) $sender->y);
-					$form->addInput('§bクローンZ', 'int', (int) $sender->z);
-					$form->addDropdown(
-						"マスクモード\n".
-						"* replace : 全てのブロックをクローンする\n".
-						"* filtered : ①ブロックのみクローンする\n".
-						"* masked : 空気以外をクローンする"
-					, $this->mask);
-					$form->addDropdown(
-						"クローンモード\n".
-						"* normal : コピーする\n".
-						"* force : コピー元に重なっても強制実行する\n".
-						"* move : 移動する"
-					, $this->clone);
-					$form->addInput('①ブロック', 'string');
-					$form->sendToPlayer($sender);
+					}elseif($sender instanceof Player){
+						//プレイヤーが送信した後の処理(コールバック)
+						$callback = function($player, $data){
+							if(!isset($data)) return;
+							//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+							$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
+							$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+							$check_clone = $this->checkPosition($data[6], $data[7], $data[8]);
+							if($check_start and $check_end and $check_clone){
+								$level_player = $player->getLevel();
+								//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
+								$level_start = $player->wep_start['level'] ?? $level_player;
+								$level_end = $player->wep_end['level'] ?? $level_player;
+								//送られてきた座標をPositionオブジェクトに変換する
+								$position_start = new Position($data[0], $data[1], $data[2], $level_start);
+								$position_end = new Position($data[3], $data[4], $data[5], $level_end);
+								$destination = new Position($data[6], $data[7], $data[8], $level_player);
+								//cloneを実行する
+								$this->clone($player, $position_start, $position_end, $destination, $this->mask[$data[9]], $this->clone[$data[10]], $data[11]);
+							}else{
+								$player->sendMessage('座標の入力に誤りがあります');
+							}
+						};
+						$form = $this->getDefaultForm($callback, $sender);
+						$form->addInput('§cクローンX', 'int', (int) $sender->x);
+						$form->addInput('§aクローンY', 'int', (int) $sender->y);
+						$form->addInput('§bクローンZ', 'int', (int) $sender->z);
+						$form->addDropdown(
+							"マスクモード\n".
+							"* replace : 全てのブロックをクローンする\n".
+							"* filtered : ①ブロックのみクローンする\n".
+							"* masked : 空気以外をクローンする"
+						, $this->mask);
+						$form->addDropdown(
+							"クローンモード\n".
+							"* normal : コピーする\n".
+							"* force : コピー元に重なっても強制実行する\n".
+							"* move : 移動する"
+						, $this->clone);
+						$form->addInput('①ブロック', 'string');
+						$form->sendToPlayer($sender);
+					}else{
+						return false;
+					}
 				}else{
 					$player->sendMessage('他の処理が実行中です');
+				}
+				break;
+			case 'cylinder':
+				//他の処理が実行してないか確認する
+				if(!isset($sender->wep_scheduler)){
+					if(isset($args[0])){
+						if(!isset($args[7])) return false;
+						//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+						$check_start = $this->checkPosition($args[0], $args[1], $args[2]);
+						$check_end = $this->checkPosition($args[3], $args[4], $args[5]);
+						if($check_start and $check_end){
+							//プレイヤーのワールドを取得する(コンソールはデフォルトワールドを取得します)
+							$sender_level = $sender instanceof Player ? $sender->getLevel() : $this->getServer()->getDefaultLevel();
+							//送られてきた座標をPositionオブジェクトに変換する
+							$position_start = new Position($args[0], $args[1], $args[2], $sender_level);
+							$position_end = new Position($args[3], $args[4], $args[5], $sender_level);
+							//cylinderを実行する
+							$this->cylinder($sender, $position_start, $position_end, $args[6], $args[7]);
+						}else{
+							$sender->sendMessage('座標の入力に誤りがあります');
+						}
+					}elseif($sender instanceof Player){
+						//プレイヤーが送信した後の処理(コールバック)
+						$callback = function($player, $data){
+							if(!isset($data)) return;
+							//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+							$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
+							$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+							if($check_start and $check_end){
+								//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
+								$level_start = $player->wep_start['level'] ?? $player->getLevel();
+								$level_end = $player->wep_end['level'] ?? $player->getLevel();
+								//送られてきた座標をPositionオブジェクトに変換する
+								$position_start = new Position($data[0], $data[1], $data[2], $level_start);
+								$position_end = new Position($data[3], $data[4], $data[5], $level_end);
+								//cylinderを実行する
+								$this->cylinder($player, $position_start, $position_end, $data[6], $this->direction[$data[7]]);
+							}else{
+								$player->sendMessage('座標の入力に誤りがあります');
+							}
+						};
+						//始点終点を含めたフォームを取得 or コールバックを登録する
+						$form = $this->getDefaultForm($callback, $sender);
+						$form->addInput('①ブロック', 'string');
+						$form->addDropdown('円柱を作成する方向', $this->direction);
+						$form->sendToPlayer($sender);
+					}else{
+						return false;
+					}
+				}else{
+					$sender->sendMessage('他の処理が実行中です');
+				}
+				break;
+			case 'sphere':
+				//他の処理が実行してないか確認する
+				if(!isset($sender->wep_scheduler)){
+					if(isset($args[0])){
+						if(!isset($args[6])) return false;
+						//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+						$check_start = $this->checkPosition($args[0], $args[1], $args[2]);
+						$check_end = $this->checkPosition($args[3], $args[4], $args[5]);
+						if($check_start and $check_end){
+							//プレイヤーのワールドを取得する(コンソールはデフォルトワールドを取得します)
+							$sender_level = $sender instanceof Player ? $sender->getLevel() : $this->getServer()->getDefaultLevel();
+							//送られてきた座標をPositionオブジェクトに変換する
+							$position_start = new Position($args[0], $args[1], $args[2], $sender_level);
+							$position_end = new Position($args[3], $args[4], $args[5], $sender_level);
+							//sphereを実行する
+							$this->sphere($sender, $position_start, $position_end, $args[6]);
+						}else{
+							$sender->sendMessage('座標の入力に誤りがあります');
+						}
+					}elseif($sender instanceof Player){
+						//プレイヤーが送信した後の処理(コールバック)
+						$callback = function($player, $data){
+							if(!isset($data)) return;
+							//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
+							$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
+							$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+							if($check_start and $check_end){
+								//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
+								$level_start = $player->wep_start['level'] ?? $player->getLevel();
+								$level_end = $player->wep_end['level'] ?? $player->getLevel();
+								//送られてきた座標をPositionオブジェクトに変換する
+								$position_start = new Position($data[0], $data[1], $data[2], $level_start);
+								$position_end = new Position($data[3], $data[4], $data[5], $level_end);
+								//sphereを実行する
+								$this->sphere($player, $position_start, $position_end, $data[6]);
+							}else{
+								$player->sendMessage('座標の入力に誤りがあります');
+							}
+						};
+						//始点終点を含めたフォームを取得 or コールバックを登録する
+						$form = $this->getDefaultForm($callback, $sender);
+						$form->addInput('①ブロック', 'string');
+						$form->sendToPlayer($sender);
+					}else{
+						return false;
+					}
+				}else{
+					$sender->sendMessage('他の処理が実行中です');
 				}
 				break;
 			case 'cancel':
@@ -148,9 +300,32 @@ class WorldEditPlus extends PluginBase implements Listener{
 					$sender->sendMessage('実行中の処理はありません');
 				}
 				break;
-			case 'e':
-				unset($sender->wep_start, $sender->wep_end);
-				$sender->sendMessage('始点と終点を消去しました');
+			case 'wand':
+				$axe = Item::get(271);
+				$axe->setCustomName('wand');
+				$sender->getInventory()->addItem($axe);
+				$sender->sendMessage('始点と終点を決める斧を付与しました');
+				break;
+			case 'pos1':
+			case 'pos2':
+				if($sender instanceof Player){
+					$wich = $label === 'pos1' ? 'wep_start' : 'wep_end';
+					if(isset($args[0])){
+						if(!isset($args[2])) return false;
+						if($this->checkPosition($args[0], $args[1], $args[2])){
+							$sender_level = $sender->getLevel();
+							$position = new Position($args[0], $args[1], $args[2], $sender_level);
+							$this->setPosition($sender, $position, $wich);
+						}else{
+							$sender->sendMessage('座標の入力に誤りがあります');
+						}
+					}else{
+						$position = $sender->asPosition();
+						$this->setPosition($sender, $position, $wich);
+					}
+				}else{
+					$sender->sendMessage('コンソールからは実行できません');
+				}
 				break;
 		}
 		return true;
@@ -178,40 +353,71 @@ class WorldEditPlus extends PluginBase implements Listener{
 #####################################################################
 
 
+	//始点設定
 	public function BlockBreak(BlockBreakEvent $event){
-		$this->setPosition($event);
-	}
-
-	public function BlockPlace(BlockPlaceEvent $event){
-		$this->setPosition($event);
+		$this->setWand($event, 'wep_start');
 	}
 
 	//ブロックで座標を登録する
-	public function setPosition($event){
+	public function setWand($event, $wich){
 		$player = $event->getPlayer();
 		if($player->isOp()){
-			$id = $event->getItem()->getId();
-			if($id === 19){
-				//始点か終点か判別して取得する(両方とも登録されていたらfalseを返します)
-				$wich = isset($player->wep_start) ? isset($player->wep_end) ? false : 'wep_end' : 'wep_start';
-				if($wich !== false){
-					$event->setCancelled();
-					$position = $event->getBlock()->asPosition();
-					//始点か終点の座標を登録する
-					$player->$wich = [
-						'x' => $x = $position->x,
-						'y' => $y = $position->y,
-						'z' => $z = $position->z,
-						'level' => $position->getLevel()
-					];
-					if($wich === 'wep_start'){
-						$player->sendMessage("始点が設定されました $x, $y, $z");
-					}elseif($wich === 'wep_end'){
-						$start = $player->wep_start;
-						$position_start = new Position($start['x'], $start['y'], $start['z'], $start['level']);
-						$side = $this->getSide($position_start, $position);
-						$player->sendMessage("終点が設定されました $x, $y, $z (".$side['x'] * $side['y'] * $side['z']."ブロック)");
-					}
+			$item = $event->getItem();
+			$item_id = $item->getId();
+			$item_name = $item->getName();
+			if($item_id === 271 and $item_name === 'wand'){
+				$event->setCancelled();
+				$position = $event->getBlock()->asPosition();
+				$this->setPosition($player, $position, $wich);
+			}
+		}
+	}
+
+	//ブロックで座標を登録する
+	public function setPosition(Player $player, Position $position, string $wich){
+		//始点か終点の座標を登録する
+		$player->$wich = [
+			'x' => $x = floor((string) $position->x),
+			'y' => $y = floor((string) $position->y),
+			'z' => $z = floor((string) $position->z),
+			'level' => $position->getLevel()
+		];
+		if(isset($player->wep_start, $player->wep_end)){
+			$start = $player->wep_start;
+			$end = $player->wep_end;
+			$position_start = new Position($start['x'], $start['y'], $start['z'], $start['level']);
+			$position_end = new Position($end['x'], $end['y'], $end['z'], $end['level']);
+			$side = $this->getSide($position_start, $position_end);
+			$side_message = '(§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)';
+		}else{
+			$side_message = '';
+		}
+		if($wich === 'wep_start'){
+			$player->sendMessage("始点が設定されました §c{$x}§r, §a{$y}§r, §b{$z}§r $side_message");
+		}elseif($wich === 'wep_end'){
+			$player->sendMessage("終点が設定されました §c{$x}§r, §a{$y}§r, §b{$z}§r $side_message");
+		}
+	}
+
+
+	//ブロックの情報を表示させる
+	public function PlayerInteract(PlayerInteractEvent $event){
+		$action = $event->getAction();
+		if($action === 0 or $action === 1){
+			$player = $event->getPlayer();
+			//終点設定
+			$this->setWand($event, 'wep_end');
+			if($player->isOp()){
+				$id = $event->getItem()->getId();
+				if($id === 340){
+					$block = $event->getBlock();
+					$x = $block->x;
+					$y = $block->y;
+					$z = $block->z;
+					$name = $block->getName();
+					$id = $block->getId();
+					$meta = $block->getDamage();
+					$player->sendMessage("＊$name ($id:$meta) [§c{$x}§r, §a{$y}§r, §b{$z}§r]");
 				}
 			}
 		}
@@ -221,7 +427,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 #####################################################################
 
 
-	public function fill(Player $player, Position $start, Position $end, string $block, string $option = 'set', string $replace = ''){
+	public function fill(Sender $player, Position $start, Position $end, string $block, string $option = 'set', string $replace = ''){
 		$level_start = $start->getLevel();
 		$level_end = $end->getLevel();
 		//同じワールドか確認する
@@ -237,7 +443,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 						//スケジューラーで処理をする無名クラスです
 						$task = new class($this, $player, $start, $end, $block, $option, $replace) extends Task{
 
-							public function __construct($owner, Player $player, Position $start, Position $end, array $block, string $option, $replace){
+							public function __construct($owner, Sender $player, Position $start, Position $end, array $block, string $option, $replace){
 								//ジェネレーターを作成します
 								$this->generator = $this->generator($owner, $player, $start, $end, $option);
 								//設置するブロックのオブジェクト
@@ -256,7 +462,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 								$this->generator->next();
 							}
 
-							public function generator($owner, Player $player, Position $start, Position $end, string $option){
+							public function generator($owner, Sender $player, Position $start, Position $end, string $option){
 								//始点のx, y, zを設定します
 								$start_x = $start->x;
 								$start_y = $start->y;
@@ -271,7 +477,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 								$meter = 100 / $side['x'];
 								$gage = 0;
 								$player_name = $player->getName();
-								$owner->getServer()->broadcastMessage($player_name.'が/fillを実行しました ['.$side['x'] * $side['y'] * $side['z'].'ブロック]');
+								$owner->getServer()->broadcastMessage($player_name.'が/fillを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
 								//ジェネレーターを一時停止する
 								yield;
 								for($a = 0; abs($a) < $side['x']; $a += $next['x']){
@@ -301,17 +507,24 @@ class WorldEditPlus extends PluginBase implements Listener{
 													$level->setBlock($vector, $new_block, true, false);
 												#バックアップ変数設置予定
 											}
+											//一度に設置するブロックを制限します(1000ブロック以上)
+											$restriction = isset($restriction) ? ++$restriction : 0;
+											if($restriction > 1000){
+												yield;
+												unset($restriction);
+											}
 										}
 									}
 									//進行ゲージを進めます
 									$round = round($gage += $meter);
-									$owner->getServer()->broadcastTip("[$player_name] §l§a$round ％ 完了");
+									$owner->getServer()->broadcastTip("§l$player_name : §a{$round} ％ 完了");
 									#バックアップ返す予定
-									yield;
+									#yield;
 								}
 								//スケジューラーを止めます
 								$this->getHandler()->cancel();
 								unset($player->wep_scheduler);
+								$owner->getServer()->broadcastMessage($player_name.'の/fillが終了しました');
 							}
 
 							//setの処理
@@ -355,11 +568,8 @@ class WorldEditPlus extends PluginBase implements Listener{
 							}
 
 						};
-						//ブロックの数で処理スピードを計算します
-						$side = $this->getSide($start, $end);
-						$period = ($side['y'] * $side['z']) / 300;
 						//スケジューラーを実行します
-						$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, $period);
+						$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, 1);
 					}else{
 						$player->sendMessage('②ブロックに無効なブロックが含まれています');
 					}
@@ -374,7 +584,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 		}
 	}
 
-	public function clone(Player $player, Position $start, Position $end, Position $destination, string $mask = 'replace', string $clone = 'normal', string $replace = ''){
+	public function clone(Sender $player, Position $start, Position $end, Position $destination, string $mask = 'replace', string $clone = 'normal', string $replace = ''){
 		$level_start = $start->getLevel();
 		$level_end = $end->getLevel();
 		//同じワールドか確認する
@@ -389,7 +599,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 						//スケジューラーで処理をする無名クラスです
 						$task = new class($this, $player, $start, $end, $destination, $mask, $clone, $replace) extends Task{
 
-							public function __construct($owner, Player $player, Position $start, Position $end, Position $destination, string $mask, string $clone, $replace){
+							public function __construct($owner, Sender $player, Position $start, Position $end, Position $destination, string $mask, string $clone, $replace){
 								//ジェネレーターを作成します
 								$this->generator = $this->generator($owner, $player, $start, $end, $destination, $mask, $clone);
 								//指定したブロックのオブジェクト
@@ -406,7 +616,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 								$this->generator->next();
 							}
 
-							public function generator($owner, Player $player, Position $start, Position $end, Position $destination, string $mask, string $clone){
+							public function generator($owner, Sender $player, Position $start, Position $end, Position $destination, string $mask, string $clone){
 								//始点のx, y, zを設定します
 								$start_x = $start->x;
 								$start_y = $start->y;
@@ -428,7 +638,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 								$meter = 100 / $side['x'];
 								$gage = 0;
 								$player_name = $player->getName();
-								$owner->getServer()->broadcastMessage($player_name.'が/cloneを実行しました ['.$side['x'] * $side['y'] * $side['z'].'ブロック]');
+								$owner->getServer()->broadcastMessage($player_name.'が/cloneを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
 								//ジェネレーターを一時停止する
 								yield;
 								for($a = 0; abs($a) < $side['x']; $a += $next['x']){
@@ -470,17 +680,24 @@ class WorldEditPlus extends PluginBase implements Listener{
 													$destination_level->setBlock($new_vector, $old_block, true, false);
 												}
 											}
+											//一度に設置するブロックを制限します(1000ブロック以上)
+											$restriction = isset($restriction) ? ++$restriction : 0;
+											if($restriction > 1000){
+												yield;
+												unset($restriction);
+											}
 										}
 									}
 									//進行ゲージを進めます
 									$round = round($gage += $meter);
-									$owner->getServer()->broadcastTip("[$player_name] §l§a$round ％ 完了");
+									$owner->getServer()->broadcastTip("§l$player_name : §a{$round} ％ 完了");
 									#バックアップ返す予定
-									yield;
+									#yield;
 								}
 								//スケジューラーを止めます
 								$this->getHandler()->cancel();
 								unset($player->wep_scheduler);
+								$owner->getServer()->broadcastMessage($player_name.'の/cloneが終了しました');
 							}
 
 							//マスクモードのreplaceの処理
@@ -523,11 +740,8 @@ class WorldEditPlus extends PluginBase implements Listener{
 							}
 
 						};
-						//ブロックの数で処理スピードを計算します
-						$side = $this->getSide($start, $end);
-						$period = ($side['y'] * $side['z']) / 300;
 						//スケジューラーを実行します
-						$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, $period);
+						$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, 1);
 					}else{
 						$player->sendMessage('①ブロックに無効なブロックが含まれています');
 					}
@@ -536,6 +750,231 @@ class WorldEditPlus extends PluginBase implements Listener{
 				}
 			}else{
 				$player->sendMessage('無効なマスクモードです');
+			}
+		}else{
+			$player->sendMessage('同じワールドで指定してください');
+		}
+	}
+
+	//未完成(現在setのみ可能です)
+	public function cylinder(Sender $player, Position $start, Position $end, string $block, string $direction){
+		$level_start = $start->getLevel();
+		$level_end = $end->getLevel();
+		//同じワールドか確認する
+		if($level_start == $level_end){
+			//指定されたブロックのオブジェクトを取得します(エラーが出たらfalseを返します)
+			$block = $this->fromString($block);
+			if($block !== false){
+				//方向が存在するか確認します
+				if(in_array($direction, $this->direction)){
+					//処理する方向を設定します
+					$direction_key = array_search($direction, $this->direction);
+					$direction_clone = $this->direction;
+					unset($direction_clone[$direction_key]);
+					array_unshift($direction_clone, $this->direction[$direction_key]);
+					//スケジューラーで処理をする無名クラスです
+					$task = new class($this, $player, $start, $end, $block, $direction_clone) extends Task{
+
+						public function __construct($owner, Sender $player, Position $start, Position $end, array $block, array $direction){
+							//ジェネレーターを作成します
+							$this->generator = $this->generator($owner, $player, $start, $end, $direction);
+							//設置するブロックのオブジェクト
+							$this->block = $block;
+							//空気ブロックのオブジェクト
+							$this->air = Block::get(0);
+						}
+
+						public function onRun(int $tick){
+							//ジェネレータの次の処理を実行します
+							$this->generator->next();
+						}
+
+						public function generator($owner, Sender $player, Position $start, Position $end, array $direction){
+							//向き設定 0=進行方向, 1と2=円を作成する向き
+							$direction_0 = $direction[0];
+							$direction_1 = $direction[1];
+							$direction_2 = $direction[2];
+							//始点の進行方向を設定します
+							$start_0 = $start->$direction_0;
+							//処理をするワールドを設定します
+							$level = $start->getLevel();
+							//x, y ,zの長さを取得します
+							$side = $owner->getSide($start, $end);
+							//始点から終点に向かう方向を取得します
+							$next = $owner->getNext($start, $end);
+							//半径を調べます
+							$radius_1 = ($side[$direction_1] - 1) / 2;
+							$radius_2 = ($side[$direction_2] - 1) / 2;
+							//中心点を調べます
+							$center_1 = $start->$direction_1 + ($radius_1 * $next[$direction_1]);
+							$center_2 = $start->$direction_2 + ($radius_2 * $next[$direction_2]);
+							//進行ゲージを設定します
+							$meter = 100 / ($side[$direction_0] * (360 / 0.05));
+							$gage = 0;
+							$player_name = $player->getName();
+							$owner->getServer()->broadcastMessage($player_name.'が/cylinderを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
+							//ジェネレーターを一時停止する
+							yield;
+							//進行方向
+							for($a = 0; abs($a) < $side[$direction_0]; $a += $next[$direction_0]){
+								$y = $start_0 + $a;
+								//円の作成処理
+								for($b = 0; $b < 360; $b += 0.05){
+									//ラジアンを取得します
+									$radian = deg2rad($b);
+									//設置する座標を計算します
+									$x = round($center_1 + ($radius_1 * sin($radian)));
+									$z = round($center_2 + ($radius_2 * cos($radian)));
+									//向きにあったVector3を取得します
+									if($direction_0 === 'x'){
+										$vector = new Vector3($y, $x, $z);
+									}elseif($direction_0 === 'y'){
+										$vector = new Vector3($x, $y, $z);
+									}elseif($direction_0 === 'z'){
+										$vector = new Vector3($x, $z, $y);
+									}
+									$block = $this->set();
+									$level->setBlock($vector, $block, true, false);
+									//一度に設置するブロックを制限します(1000ブロック以上)
+									$restriction = isset($restriction) ? ++$restriction : 0;
+									if($restriction > 360){
+										yield;
+										unset($restriction);
+									}
+									//進行ゲージを進めます
+									$round = round($gage += $meter);
+									$owner->getServer()->broadcastTip("§l$player_name : §a{$round} ％ 完了");
+								}
+								#バックアップ返す予定
+								#yield;
+							}
+							//スケジューラーを止めます
+							$this->getHandler()->cancel();
+							unset($player->wep_scheduler);
+							$owner->getServer()->broadcastMessage($player_name.'の/cylinderが終了しました');
+						}
+
+						//setの処理
+						public function set($block = null){
+							$rand = array_rand($this->block);
+							return $this->block[$rand];
+						}
+
+					};
+					//スケジューラーを実行します
+					$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, 1);
+				}else{
+					$player->sendMessage('無効な方向です');
+				}
+			}else{
+				$player->sendMessage('①ブロックに無効なブロックが含まれています');
+			}
+		}else{
+			$player->sendMessage('同じワールドで指定してください');
+		}
+	}
+
+	//未完成(現在setのみ可能です)
+	public function sphere(Sender $player, Position $start, Position $end, string $block){
+		$level_start = $start->getLevel();
+		$level_end = $end->getLevel();
+		//同じワールドか確認する
+		if($level_start == $level_end){
+			//指定されたブロックのオブジェクトを取得します(エラーが出たらfalseを返します)
+			$block = $this->fromString($block);
+			if($block !== false){
+				//スケジューラーで処理をする無名クラスです
+				$task = new class($this, $player, $start, $end, $block) extends Task{
+
+					public function __construct($owner, Sender $player, Position $start, Position $end, array $block){
+						//ジェネレーターを作成します
+						$this->generator = $this->generator($owner, $player, $start, $end);
+						//設置するブロックのオブジェクト
+						$this->block = $block;
+						//空気ブロックのオブジェクト
+						$this->air = Block::get(0);
+					}
+
+					public function onRun(int $tick){
+						//ジェネレータの次の処理を実行します
+						$this->generator->next();
+					}
+
+					public function generator($owner, Sender $player, Position $start, Position $end){
+						//処理をするワールドを設定します
+						$level = $start->getLevel();
+						//x, y ,zの長さを取得します
+						$side = $owner->getSide($start, $end);
+						//始点から終点に向かう方向を取得します
+						$next = $owner->getNext($start, $end);
+						//半径を調べます		$sx = ($side['x'] - 1) / 2;
+						$radius_x = ($side['x'] - 1) / 2;
+						$radius_y = ($side['y'] - 1) / 2;
+						$radius_z = ($side['z'] - 1) / 2;
+						//中心点を調べます
+						$center_x = $start->x + ($radius_x * $next['x']);
+						$center_y = $start->y + ($radius_y * $next['y']);
+						$center_z = $start->z + ($radius_z * $next['z']);
+						//進行ゲージを設定します
+						$meter = 100 / ((180 / 0.5) * (360 / 0.5));
+						$gage = 0;
+						$player_name = $player->getName();
+						$owner->getServer()->broadcastMessage($player_name.'が/sphereを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
+						//ジェネレーターを一時停止する
+						yield;
+						for($a = 270; $a > 90; $a -= 0.5){
+
+							$radian_1 = deg2rad($a);
+
+							$sin_1 = sin($radian_1);
+							$cos_1 = cos($radian_1);
+
+							$x = round($center_x + ($radius_x * $sin_1));
+
+							$radius_next_y = $radius_y * $cos_1;
+							$radius_next_z = $radius_z * $cos_1;
+
+
+							for($b = 0; $b < 360; $b += 0.5){
+
+								$radian_2 = deg2rad($b);
+
+								$y = round($center_y + ($radius_next_y * sin($radian_2)));
+								$z = round($center_z + ($radius_next_z * cos($radian_2)));
+
+								$vector = new Vector3($x, $y, $z);
+								$block = $this->set();
+								$level->setBlock($vector, $block, true, false);
+								//一度に設置するブロックを制限します(1000ブロック以上)
+								$restriction = isset($restriction) ? ++$restriction : 0;
+								if($restriction > 360){
+									yield;
+									unset($restriction);
+								}
+								//進行ゲージを進めます
+								$round = round($gage += $meter);
+								$owner->getServer()->broadcastTip("§l$player_name : §a{$round} ％ 完了");
+							}
+							#バックアップ返す予定
+							#yield;
+						}
+						//スケジューラーを止めます
+						$this->getHandler()->cancel();
+						unset($player->wep_scheduler);
+						$owner->getServer()->broadcastMessage($player_name.'の/sphereが終了しました');
+					}
+
+					//setの処理
+					public function set($block = null){
+						$rand = array_rand($this->block);
+						return $this->block[$rand];
+					}
+
+				};
+				//スケジューラーを実行します
+				$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, 1);
+			}else{
+				$player->sendMessage('①ブロックに無効なブロックが含まれています');
 			}
 		}else{
 			$player->sendMessage('同じワールドで指定してください');
@@ -599,31 +1038,6 @@ class WorldEditPlus extends PluginBase implements Listener{
 			'y' => $start->y < $end->y ? +1 : -1,
 			'z' => $start->z < $end->z ? +1 : -1
 		];
-	}
-
-
-#####################################################################
-
-
-	//ブロックの情報を表示させる
-	public function PlayerInteract(PlayerInteractEvent $event){
-		$action = $event->getAction();
-		if($action === 0 or $action === 1){
-			$player = $event->getPlayer();
-			if($player->isOp()){
-				$id = $event->getItem()->getId();
-				if($id === 340){
-					$block = $event->getBlock();
-					$x = $block->x;
-					$y = $block->y;
-					$z = $block->z;
-					$name = $block->getName();
-					$id = $block->getId();
-					$meta = $block->getDamage();
-					$player->sendMessage("＊$name ($id:$meta) [§c{$x}§r, §a{$y}§r, §b{$z}§r]");
-				}
-			}
-		}
 	}
 
 
