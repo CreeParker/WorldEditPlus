@@ -1,7 +1,7 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 2.1
-api: [3.0.0, 4.0.0]
+version: 2.2
+api: [3.0.0, 3.1.0, 3.2.0, 4.0.0]
 author: CreeParker
 website: https://twitter.com/cree_parker
 commands:

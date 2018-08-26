@@ -3,25 +3,24 @@
 namespace WorldEditPlus;
 
 use pocketmine\block\Block;
-use pocketmine\command\Command;
-use pocketmine\command\CommandSender as Sender;
-use pocketmine\event\block\BlockBreakEvent;
-use pocketmine\event\block\BlockPlaceEvent;
+use pocketmine\command\{Command, CommandSender as Sender};
+use pocketmine\event\block\{BlockBreakEvent, BlockPlaceEvent};
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\Listener;
 use pocketmine\item\Item;
 use pocketmine\math\Vector3;
 use pocketmine\plugin\PluginBase;
-use pocketmine\level\Position;
+use pocketmine\level\{Position, Level};
 use pocketmine\Player;
 use pocketmine\Server;
-use pocketmine\scheduler\Task;
-use pocketmine\level\Level;
+use pocketmine\scheduler\{Task, AsyncTask};
 
 class WorldEditPlus extends PluginBase implements Listener{
 
 	public function onEnable(){
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
+
+
 	}
 
 	//WorldEditPlusで使用しているグローバル変数
@@ -48,7 +47,6 @@ class WorldEditPlus extends PluginBase implements Listener{
 	public $mask = ['replace', 'filtered', 'masked'];
 	public $clone = ['normal', 'force', 'move'];
 	public $direction = ['x', 'y', 'z'];
-	#public $accuracy = ['低', '中', '高', '最高'];
 
 
 #####################################################################
@@ -476,6 +474,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 								//進行ゲージを設定します
 								$meter = 100 / $side['x'];
 								$gage = 0;
+								//実行開始のメッセージ
 								$player_name = $player->getName();
 								$owner->getServer()->broadcastMessage($player_name.'が/fillを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
 								//ジェネレーターを一時停止する
@@ -637,6 +636,7 @@ class WorldEditPlus extends PluginBase implements Listener{
 								//進行ゲージを設定します
 								$meter = 100 / $side['x'];
 								$gage = 0;
+								//実行開始のメッセージ
 								$player_name = $player->getName();
 								$owner->getServer()->broadcastMessage($player_name.'が/cloneを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
 								//ジェネレーターを一時停止する
@@ -809,44 +809,51 @@ class WorldEditPlus extends PluginBase implements Listener{
 							$center_1 = $start->$direction_1 + ($radius_1 * $next[$direction_1]);
 							$center_2 = $start->$direction_2 + ($radius_2 * $next[$direction_2]);
 							//進行ゲージを設定します
-							$meter = 100 / ($side[$direction_0] * (360 / 0.05));
+							$meter = 100 / $side[$direction_0];
 							$gage = 0;
+							//実行開始のメッセージ
 							$player_name = $player->getName();
 							$owner->getServer()->broadcastMessage($player_name.'が/cylinderを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
+							//ジェネレーターを一時停止する
+							yield;
+							//円の作成処理
+							for($b = 0; $b < 360; $b += 0.01){
+								//ラジアンを取得します
+								$radian = deg2rad($b);
+								//設置する座標を計算します
+								$x = round($center_1 + ($radius_1 * sin($radian)));
+								$z = round($center_2 + ($radius_2 * cos($radian)));
+								//同じ座標だったらスキップする
+								if(isset($memory))
+									if([$x, $z] == $memory)
+										continue;
+								$memory = [$x, $z];
+								$cylinder[] = $memory;
+							}
 							//ジェネレーターを一時停止する
 							yield;
 							//進行方向
 							for($a = 0; abs($a) < $side[$direction_0]; $a += $next[$direction_0]){
 								$y = $start_0 + $a;
-								//円の作成処理
-								for($b = 0; $b < 360; $b += 0.05){
-									//ラジアンを取得します
-									$radian = deg2rad($b);
-									//設置する座標を計算します
-									$x = round($center_1 + ($radius_1 * sin($radian)));
-									$z = round($center_2 + ($radius_2 * cos($radian)));
+								//計算した場所に設置します
+								foreach($cylinder as $value){
 									//向きにあったVector3を取得します
 									if($direction_0 === 'x'){
-										$vector = new Vector3($y, $x, $z);
+										$vector = new Vector3($y, $value[0], $value[1]);
 									}elseif($direction_0 === 'y'){
-										$vector = new Vector3($x, $y, $z);
+										$vector = new Vector3($value[0], $y, $value[1]);
 									}elseif($direction_0 === 'z'){
-										$vector = new Vector3($x, $z, $y);
+										$vector = new Vector3($value[0], $value[1], $y);
 									}
+									#ここら辺が未完成
 									$block = $this->set();
 									$level->setBlock($vector, $block, true, false);
-									//一度に設置するブロックを制限します(1000ブロック以上)
-									$restriction = isset($restriction) ? ++$restriction : 0;
-									if($restriction > 360){
-										yield;
-										unset($restriction);
-									}
-									//進行ゲージを進めます
-									$round = round($gage += $meter);
-									$owner->getServer()->broadcastTip("§l$player_name : §a{$round} ％ 完了");
 								}
+								//進行ゲージを進めます
+								$round = round($gage += $meter);
+								$owner->getServer()->broadcastTip("§l$player_name : §a{$round} ％ 完了");
 								#バックアップ返す予定
-								#yield;
+								yield;
 							}
 							//スケジューラーを止めます
 							$this->getHandler()->cancel();
@@ -885,7 +892,6 @@ class WorldEditPlus extends PluginBase implements Listener{
 			if($block !== false){
 				//スケジューラーで処理をする無名クラスです
 				$task = new class($this, $player, $start, $end, $block) extends Task{
-
 					public function __construct($owner, Sender $player, Position $start, Position $end, array $block){
 						//ジェネレーターを作成します
 						$this->generator = $this->generator($owner, $player, $start, $end);
@@ -894,12 +900,10 @@ class WorldEditPlus extends PluginBase implements Listener{
 						//空気ブロックのオブジェクト
 						$this->air = Block::get(0);
 					}
-
 					public function onRun(int $tick){
 						//ジェネレータの次の処理を実行します
 						$this->generator->next();
 					}
-
 					public function generator($owner, Sender $player, Position $start, Position $end){
 						//処理をするワールドを設定します
 						$level = $start->getLevel();
@@ -923,25 +927,16 @@ class WorldEditPlus extends PluginBase implements Listener{
 						//ジェネレーターを一時停止する
 						yield;
 						for($a = 270; $a > 90; $a -= 0.5){
-
 							$radian_1 = deg2rad($a);
-
 							$sin_1 = sin($radian_1);
 							$cos_1 = cos($radian_1);
-
 							$x = round($center_x + ($radius_x * $sin_1));
-
 							$radius_next_y = $radius_y * $cos_1;
 							$radius_next_z = $radius_z * $cos_1;
-
-
 							for($b = 0; $b < 360; $b += 0.5){
-
 								$radian_2 = deg2rad($b);
-
 								$y = round($center_y + ($radius_next_y * sin($radian_2)));
 								$z = round($center_z + ($radius_next_z * cos($radian_2)));
-
 								$vector = new Vector3($x, $y, $z);
 								$block = $this->set();
 								$level->setBlock($vector, $block, true, false);
@@ -963,13 +958,11 @@ class WorldEditPlus extends PluginBase implements Listener{
 						unset($player->wep_scheduler);
 						$owner->getServer()->broadcastMessage($player_name.'の/sphereが終了しました');
 					}
-
 					//setの処理
 					public function set($block = null){
 						$rand = array_rand($this->block);
 						return $this->block[$rand];
 					}
-
 				};
 				//スケジューラーを実行します
 				$player->wep_scheduler = $this->getScheduler()->scheduleRepeatingTask($task, 1);
