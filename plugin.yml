@@ -1,9 +1,10 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 2.2
+version: 2.3
 api: [3.0.0, 3.1.0, 3.2.0, 4.0.0]
 author: CreeParker
 website: https://twitter.com/cree_parker
+depend: [FormAPI]
 commands:
   fill:
     description: 領域の一部または全体を指定したブロックで埋める。
