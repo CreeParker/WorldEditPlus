@@ -1,6 +1,6 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 2.3
+version: 2.4
 api: [3.0.0, 4.0.0]
 author: CreeParker (@cree_parker)
 description: このプラグインは、ワールドエディッタです。

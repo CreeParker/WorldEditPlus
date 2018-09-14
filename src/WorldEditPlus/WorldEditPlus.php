@@ -164,9 +164,9 @@ class WorldEditPlus extends PluginBase implements Listener{
 							}
 						};
 						$form = $this->getDefaultForm($callback, $sender);
-						$form->addInput('§cクローンX', 'int', (int) $sender->x);
-						$form->addInput('§aクローンY', 'int', (int) $sender->y);
-						$form->addInput('§bクローンZ', 'int', (int) $sender->z);
+						$form->addInput('§cクローンX', 'int', floor((string) $sender->x));
+						$form->addInput('§aクローンY', 'int', floor((string) $sender->y));
+						$form->addInput('§bクローンZ', 'int', floor((string) $sender->z));
 						$form->addDropdown(
 							"マスクモード\n".
 							"* replace : 全てのブロックをクローンする\n".
