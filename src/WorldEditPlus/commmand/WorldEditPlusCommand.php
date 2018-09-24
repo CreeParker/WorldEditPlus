@@ -17,8 +17,9 @@ declare(strict_types = 1);
 namespace  WorldEditPlus\command;
 
 use WorldEditPlus\WorldEditPlus;
-use WorldEditPlus\language\Language;
+use WorldEditPlus\language\Language as Lang;
 use pocketmine\command\{Command, CommandSender, PluginIdentifiableCommand};
+use pocketmine\utils\MainLogger;
 
 abstract class WorldEditPlusCommand extends Command {
 
@@ -72,18 +73,37 @@ abstract class WorldEditPlusCommand extends Command {
 		return $this->owner;
 	}
 
-	public function getMessage(string $text, array $params = []) : string {
-		Language::getMessage($text, $params);
+	public function getServer() : Server {
+		return $this->owner->getServer();
 	}
 
 	public function setUsage(string $usage) : void {
-		$message = $this->getMessage($usage);
-		parent::setUsage($message);
+		parent::setUsage(Lang::get($usage));
 	}
 
-	public function setDescription(string $usage) : void {
-		$message = $this->getMessage($usage);
-		parent::setDescription($message);
+	public function setDescription(string $description) : void {
+		parent::setDescription(Lang::get($description));
+	}
+
+	public function getDefaultForm(callable $callback, CommandSender $sender) : ?CustomForm {
+		$formapi = Server::getInterface()->getPluginManager()->getPlugin('FormAPI');
+		if($fromapi === null) {
+			MainLogger::getLogger()->warning(Lang::get('formapi.null.message'));
+			return null;
+		}
+		$form = $formapi->createCustomForm($callback);
+		$form->setTitle(Lang::get('form.message'));
+		$form->addInput(Lang::get('form.start.x'), 'int', $sender->wep_start['x'] ?? '');
+		$form->addInput(Lang::get('form.start.y'), 'int', $sender->wep_start['y'] ?? '');
+		$form->addInput(Lang::get('form.start.z'), 'int', $sender->wep_start['z'] ?? '');
+		$form->addInput(Lang::get('form.end.x'), 'int', $sender->wep_end['x'] ?? '');
+		$form->addInput(Lang::get('form.end.y'), 'int', $sender->wep_end['y'] ?? '');
+		$form->addInput(Lang::get('form.end.z'), 'int', $sender->wep_end['z'] ?? '');
+		return $form;
+	}
+
+	public function checkIntval($x, $y, $z) : bool {
+		return is_numeric($x) and is_numeric($y) and is_numeric($z);
 	}
 
 }

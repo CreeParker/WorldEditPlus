@@ -16,7 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\language;
 
-use pocketmine\utils\MainLogger\BaseLang;
+use pocketmine\utils\MainLogger;
 
 class Language {
 
@@ -70,7 +70,7 @@ class Language {
 	 *
 	 * @return string
 	 */
-	public static function getMessage(string $text, array $params = []) : string {
+	public static function get(string $text, array $params = []) : string {
 
 		$message = self::$language[$text] ?? self::$default[$text] ?? '';
 
