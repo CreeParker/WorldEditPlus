@@ -13,7 +13,8 @@
  */
 
 declare(strict_types = 1);
-namespace WorldEditPlus;
+
+namespace WorldEditPlus\processing;
 
 use pocketmine\block\Block;
 use pocketmine\level\Level;

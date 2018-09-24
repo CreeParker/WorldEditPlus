@@ -14,10 +14,13 @@
 
 declare(strict_types = 1);
 
-namespace  WorldEditPlus\command;
+namespace WorldEditPlus\command;
 
 use WorldEditPlus\WorldEditPlus;
+use WorldEditPlus\processing\FillProcessing;
 use pocketmine\command\CommandSender;
+use pocketmine\level\{Position, Level};
+use pocketmine\Player;
 
 class FillCommand extends WorldEditPlusCommand {
 
@@ -33,19 +36,19 @@ class FillCommand extends WorldEditPlusCommand {
 
 	public function onCommand(CommandSender $sender, array $args) : bool {
 		if(isset($args[0])){
-			if(!isset($args[6])) return false;
+			if(! isset($args[6])) return false;
 			//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
-			$check_start = $this->checkPosition($args[0], $args[1], $args[2]);
-			$check_end = $this->checkPosition($args[3], $args[4], $args[5]);
+			$check_start = $this->checkIntval($args[0], $args[1], $args[2]);
+			$check_end = $this->checkIntval($args[3], $args[4], $args[5]);
 			if($check_start and $check_end){
 				//プレイヤーのワールドを取得する(コンソールはデフォルトワールドを取得します)
-				$sender_level = $sender instanceof Player ? $sender->getLevel() : $this->getServer()->getDefaultLevel();
+				$sender_level = $sender instanceof Player ? $sender->getLevel() : $sender->getServer()->getDefaultLevel();
 				//送られてきた座標をPositionオブジェクトに変換する
 				$position_start = new Position($args[0], $args[1], $args[2], $sender_level);
 				$position_end = new Position($args[3], $args[4], $args[5], $sender_level);
 				//入力されてない項目をデフォルトに設定します
-				if(!isset($args[7])) $args[7] = 'set';
-				if(!isset($args[8])) $args[8] = '';
+				if(! isset($args[7])) $args[7] = 'set';
+				if(! isset($args[8])) $args[8] = '';
 				//fillを実行する
 				$this->fill($sender, $position_start, $position_end, $args[6], $args[7], $args[8]);
 			}else{
@@ -54,10 +57,10 @@ class FillCommand extends WorldEditPlusCommand {
 		}elseif($sender instanceof Player){
 			//プレイヤーが送信した後の処理(コールバック)
 			$callback = function($player, $data){
-				if(!isset($data)) return;
+				if(! isset($data)) return;
 				//送られてきた座標が正しく入力されているかチェックする(エラーが出たらfalseを返します)
-				$check_start = $this->checkPosition($data[0], $data[1], $data[2]);
-				$check_end = $this->checkPosition($data[3], $data[4], $data[5]);
+				$check_start = $this->checkIntval($data[0], $data[1], $data[2]);
+				$check_end = $this->checkIntval($data[3], $data[4], $data[5]);
 				if($check_start and $check_end){
 					//座標を取得したワールドを取得する(存在しない場合は現在地点のワールドを取得)
 					$level_start = $player->wep_start['level'] ?? $player->getLevel();
@@ -66,7 +69,7 @@ class FillCommand extends WorldEditPlusCommand {
 					$position_start = new Position($data[0], $data[1], $data[2], $level_start);
 					$position_end = new Position($data[3], $data[4], $data[5], $level_end);
 					//fillを実行する
-					$this->fill($player, $position_start, $position_end, $data[6], $this->option[$data[7]], $data[8]);
+					new FillProcessing($player, $position_start, $position_end, $data[6], FillProcessing::OPTION[$data[7]], $data[8]);
 				}else{
 					$player->sendMessage('座標の入力に誤りがあります');
 				}

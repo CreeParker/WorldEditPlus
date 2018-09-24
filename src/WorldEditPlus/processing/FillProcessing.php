@@ -14,13 +14,13 @@
 
 declare(strict_types = 1);
 
-namespace  WorldEditPlus;
+namespace WorldEditPlus\processing;
 
 use pocketmine\block\Block;
 use pocketmine\level\Position;
 use pocketmine\command\CommandSender;
 
-class fill extends WorldEditPlusAPI {
+class FillProcessing extends WorldEditPlusAPI {
 
 	public const OPTION = ['set', 'outline', 'hollow', 'keep', 'replace'];
 

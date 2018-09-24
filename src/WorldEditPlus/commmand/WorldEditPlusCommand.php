@@ -14,7 +14,7 @@
 
 declare(strict_types = 1);
 
-namespace  WorldEditPlus\command;
+namespace WorldEditPlus\command;
 
 use WorldEditPlus\WorldEditPlus;
 use WorldEditPlus\language\Language as Lang;
