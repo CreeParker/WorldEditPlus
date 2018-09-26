@@ -17,9 +17,10 @@ declare(strict_types = 1);
 namespace WorldEditPlus\command;
 
 use WorldEditPlus\WorldEditPlus;
-use WorldEditPlus\language\Language as Lang;
-use pocketmine\command\{Command, CommandSender, PluginIdentifiableCommand};
+use WorldEditPlus\Language;
+use pocketmine\command\{Command, CommandSender};
 use pocketmine\utils\MainLogger;
+use pocketmine\Server;
 
 abstract class WorldEditPlusCommand extends Command {
 
@@ -52,8 +53,10 @@ abstract class WorldEditPlusCommand extends Command {
 
 		$success = $this->onCommand($sender, $args);
 
-		if(! $success and $this->usageMessage !== "")
-			throw new InvalidCommandSyntaxException();
+		if(! $success and $this->usageMessage !== ""){
+			$usage = Server::getInstance()->getLanguage()->translateString("commands.generic.usage", [$this->usageMessage]);
+			$sender->sendMessage($usage);
+		}
 
 		return $success;
 	}
@@ -67,38 +70,33 @@ abstract class WorldEditPlusCommand extends Command {
 	abstract public function onCommand(CommandSender $sender, array $args) : bool;
 
 	/**
-	 * @return WorldEditPlus
+	 * @param string $usage
 	 */
-	public function getOwner() : WorldEditPlus {
-		return $this->owner;
-	}
-
-	public function getServer() : Server {
-		return $this->owner->getServer();
-	}
-
 	public function setUsage(string $usage) : void {
-		parent::setUsage(Lang::get($usage));
+		parent::setUsage(Language::get($usage));
 	}
 
+	/**
+	 * @param string $description
+	 */
 	public function setDescription(string $description) : void {
-		parent::setDescription(Lang::get($description));
+		parent::setDescription(Language::get($description));
 	}
 
-	public function getDefaultForm(callable $callback, CommandSender $sender) : ?CustomForm {
-		$formapi = Server::getInterface()->getPluginManager()->getPlugin('FormAPI');
-		if($fromapi === null) {
-			MainLogger::getLogger()->warning(Lang::get('formapi.null.message'));
+	public function getDefaultForm(callable $callback, CommandSender $sender) : ?object {
+		$formapi = Server::getInstance()->getPluginManager()->getPlugin('FormAPI');
+		if($formapi === null) {
+			MainLogger::getLogger()->warning(Language::get('formapi.null.message'));
 			return null;
 		}
 		$form = $formapi->createCustomForm($callback);
-		$form->setTitle(Lang::get('form.message'));
-		$form->addInput(Lang::get('form.start.x'), 'int', $sender->wep_start['x'] ?? '');
-		$form->addInput(Lang::get('form.start.y'), 'int', $sender->wep_start['y'] ?? '');
-		$form->addInput(Lang::get('form.start.z'), 'int', $sender->wep_start['z'] ?? '');
-		$form->addInput(Lang::get('form.end.x'), 'int', $sender->wep_end['x'] ?? '');
-		$form->addInput(Lang::get('form.end.y'), 'int', $sender->wep_end['y'] ?? '');
-		$form->addInput(Lang::get('form.end.z'), 'int', $sender->wep_end['z'] ?? '');
+		$form->setTitle(Language::get('form.message'));
+		$form->addInput(Language::get('form.pos.one.x'), 'int', $sender->wep_start['x'] ?? '');
+		$form->addInput(Language::get('form.pos.one.y'), 'int', $sender->wep_start['y'] ?? '');
+		$form->addInput(Language::get('form.pos.one.z'), 'int', $sender->wep_start['z'] ?? '');
+		$form->addInput(Language::get('form.pos.two.x'), 'int', $sender->wep_end['x'] ?? '');
+		$form->addInput(Language::get('form.pos.two.y'), 'int', $sender->wep_end['y'] ?? '');
+		$form->addInput(Language::get('form.pos.two.z'), 'int', $sender->wep_end['z'] ?? '');
 		return $form;
 	}
 

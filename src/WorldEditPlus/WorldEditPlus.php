@@ -17,12 +17,11 @@ declare(strict_types = 1);
 namespace WorldEditPlus;
 
 use WorldEditPlus\command\{
-	FillProcessing,
+	FillCommand,
 	CloneCommand,
 	CylinderCommand,
 	SphereCommand
 };
-use WorldEditPlus\language\Language;
 use pocketmine\plugin\PluginBase;
 
 class WorldEditPlus extends PluginBase {
@@ -37,16 +36,15 @@ class WorldEditPlus extends PluginBase {
 		$fall_path = $this->getFile();
 		new Language($lang, $path, $fall_path);
 
-		var_dump(Language::get('wand.pos1', [1, 2, 3]));
+		$event = new EventListener($this);
+		#$this->getServer()->getPluginManager()->registerEvents($event, $this);
 
-		/*$event = new EventListener($this);
-		$this->getServer()->getPluginManager()->registerEvents($event, $this);
 		$this->getServer()->getCommandMap()->registerAll('worldeditplus', [
-			new FillProcessing($this),
-			new CloneCommand($this),
-			new CylinderCommand($this),
-			new SphereCommand($this)
-		]);*/
+			new FillCommand($this),
+		#	new CloneCommand($this),
+		#	new CylinderCommand($this),
+		#	new SphereCommand($this)
+		]);
 	}
 
 

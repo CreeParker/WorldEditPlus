@@ -14,7 +14,7 @@
 
 declare(strict_types = 1);
 
-namespace WorldEditPlus\language;
+namespace WorldEditPlus;
 
 use pocketmine\utils\MainLogger;
 
@@ -38,7 +38,7 @@ class Language {
 		$path .= 'languages/' . $lang . '.ini';
 
 		if(! $this->loadLanguage($path, self::$language))
-			MainLogger::getLogger()->error('言語ファイル「' . $lang . '.ini」が見つかりませんでした。');
+			MainLogger::getLogger()->warning('言語ファイル「' . $lang . '.ini」が見つかりませんでした。');
 
 		$fall_path .= 'resources/languages/' . self::FALLBACK_LANGUAGE . '.ini';
 

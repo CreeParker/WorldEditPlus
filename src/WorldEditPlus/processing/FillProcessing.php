@@ -20,11 +20,11 @@ use pocketmine\block\Block;
 use pocketmine\level\Position;
 use pocketmine\command\CommandSender;
 
-class FillProcessing extends WorldEditPlusAPI {
+class FillProcessing extends Processing {
 
 	public const OPTION = ['set', 'outline', 'hollow', 'keep', 'replace'];
 
-	public function __construct(CommandSender $sender, Position $pos1, Position $pos2, string $block, string $option = SET, string $replace = '') {
+	public function __construct(CommandSender $sender, Position $pos1, Position $pos2, string $block, string $option = self::OPTION[0], string $replace = '') {
 		parent::__construct($sender, $pos1, $pos2);
 		$this->block = $this->fromString($block);
 		$this->option = $option;
@@ -36,11 +36,11 @@ class FillProcessing extends WorldEditPlusAPI {
 			$this->sender->sendMessage('');
 			return false;
 		}
-		if(! is_array($this->option, OPTION)) {
+		if(! is_array($this->option, self::OPTION)) {
 			$this->sender->sendMessage('');
 			return false;
 		}
-		if($this->option === REPLACE) {
+		if($this->option === self::OPTION[5]) {
 			if($this->replace === false) {
 				$this->sender->sendMessage('');
 				return false;

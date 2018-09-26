@@ -16,6 +16,11 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
+use pocketmine\event\block\{
+	BlockBreakEvent,
+	BlockPlaceEvent
+};
+use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\Listener;
 
 class EventListener implements Listener {
