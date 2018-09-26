@@ -20,7 +20,7 @@ use pocketmine\block\Block;
 use pocketmine\level\Position;
 use pocketmine\command\CommandSender;
 
-class FillProcessing extends Processing {
+class FillProcessing extends WorldEditPlusProcessing {
 
 	public const OPTION = ['set', 'outline', 'hollow', 'keep', 'replace'];
 
@@ -54,7 +54,6 @@ class FillProcessing extends Processing {
 		$name = $this->sender->getName();
 		Server::getInstance()->broadcastMessage($name.'が/fillを実行しました (§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)');
 		$option = $this->option;
-		yield false;
 		for($a = 0; abs($a) < $this->sideX; $a += $this->nextX) {
 
 			$x = $this->x1 + $a;
@@ -86,16 +85,12 @@ class FillProcessing extends Processing {
 		yield true;
 	}
 
-	public function set($block = null) : Block {
+	public function set(Block $block) : Block {
 		$rand = array_rand($this->block);
 		return $this->block[$rand];
 	}
 
-	public function replace($block) : ?Block {
-		return isset($this->replace[(string) $block]) ? $this->set() : null;
-	}
-
-	public function outline($block) : ?Block {
+	public function outline(Block $block) : ?Block {
 		$x = $block->x;
 		$y = $block->y;
 		$z = $block->z;
@@ -106,7 +101,7 @@ class FillProcessing extends Processing {
 		return $this->set();
 	}
 
-	public function hollow($block) : Block {
+	public function hollow(Block $block) : Block {
 		$x = $block->x;
 		$y = $block->y;
 		$z = $block->z;
@@ -117,8 +112,12 @@ class FillProcessing extends Processing {
 		return $this->set();
 	}
 
-	public function keep($block) : ?Block {
+	public function keep(Block $block) : ?Block {
 		return (string) $block === (string) $this->air ? $this->set() : null;
+	}
+
+	public function replace(Block $block) : ?Block {
+		return isset($this->replace[(string) $block]) ? $this->set() : null;
 	}
 
 }

@@ -20,7 +20,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
 use pocketmine\Server;
 
-abstract class Processing {
+abstract class WorldEditPlusProcessing {
 
 	/** @var CommandSender */
 	public $sender;
