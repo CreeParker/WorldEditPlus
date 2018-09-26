@@ -20,7 +20,7 @@ use pocketmine\utils\MainLogger;
 
 class Language {
 
-	private const DEFAULT_LANGUAGE = 'jpn';
+	private const FALLBACK_LANGUAGE = 'jpn';
 
 	/** @var array */
 	private static $language = [];
@@ -35,17 +35,15 @@ class Language {
 	 */
 	public function __construct(string $lang, string $path, string $fall_path) {
 
-		$resources_path = 'resources/language/';
-
-		$path .= $resources_path . $lang . '.ini';
+		$path .= 'languages/' . $lang . '.ini';
 
 		if(! $this->loadLanguage($path, self::$language))
-			MainLogger::getLogger()->warning("言語ファイル「{$lang}.ini」が見つかりませんでした。");
+			MainLogger::getLogger()->error('言語ファイル「' . $lang . '.ini」が見つかりませんでした。');
 
-		$fall_path .= $resources_path . DEFAULT_LANGUAGE . '.ini';
+		$fall_path .= 'resources/languages/' . self::FALLBACK_LANGUAGE . '.ini';
 
 		if(! $this->loadLanguage($fall_path, self::$fall_language))
-			MainLogger::getLogger()->error("システムの言語ファイル「".DEFAULT_LANGUAGE."」が見つかりませんでした。");
+			MainLogger::getLogger()->error('システムの言語ファイル「' . self::FALLBACK_LANGUAGE . '.ini」が見つかりませんでした。');
 
 	}
 
@@ -53,7 +51,7 @@ class Language {
 	 * @param string $path
 	 * @param array &$language
 	 *
-	 *@return bool
+	 * @return bool
 	 */
 	private function loadLanguage(string $path, array &$language) : bool {
 		if(! file_exists($path))
@@ -74,7 +72,7 @@ class Language {
 		$message = self::$language[$text] ?? self::$fall_language[$text] ?? '';
 
 		foreach($params as $key => $value)
-			$message = str_replace("{%$i}", $value, $message);
+			$message = str_replace('{%' . $key . '}', $value, $message);
 
 		return $message;
 	}

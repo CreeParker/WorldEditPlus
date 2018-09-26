@@ -28,18 +28,25 @@ use pocketmine\plugin\PluginBase;
 class WorldEditPlus extends PluginBase {
 
 	public function onEnable() : void {
-		$event = new EventListener($this);
+
+		$resources = $this->getResources();
+		foreach($resources as $key => $value)
+			$this->saveResource($key);
+		$lang = $this->getConfig()->get('language');
+		$path = $this->getDataFolder();
+		$fall_path = $this->getFile();
+		new Language($lang, $path, $fall_path);
+
+		var_dump(Language::get('wand.pos1', [1, 2, 3]));
+
+		/*$event = new EventListener($this);
 		$this->getServer()->getPluginManager()->registerEvents($event, $this);
 		$this->getServer()->getCommandMap()->registerAll('worldeditplus', [
 			new FillProcessing($this),
 			new CloneCommand($this),
 			new CylinderCommand($this),
 			new SphereCommand($this)
-		]);
-		$this->saveResource('language');
-		$this->saveDefaultConfig();
-		$lang = $this->getConfig()->get('language');
-		new Language($lang, $this->getDataFolder(), $this->getFile());
+		]);*/
 	}
 
 
