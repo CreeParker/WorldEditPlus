@@ -23,6 +23,7 @@ use pocketmine\command\CommandSender;
 use pocketmine\level\{Position, Level};
 use pocketmine\Player;
 use pocketmine\utils\TextFormat;
+use pocketmine\Server;
 
 class FillCommand extends WorldEditPlusCommand {
 
@@ -48,32 +49,32 @@ class FillCommand extends WorldEditPlusCommand {
 				return false;
 			$check_pos1 = $this->checkIntval($args[0], $args[1], $args[2]);
 			$check_pos2 = $this->checkIntval($args[3], $args[4], $args[5]);
-			if($check_pos1 and $check_pso2) {
+			if($check_pos1 and $check_pos2) {
 				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
 				$pos1 = new Position($args[0], $args[1], $args[2], $level);
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
 				$args[7] = $args[7] ?? 'set';
 				$args[8] = $args[8] ?? '';
-				#new FillProcessing($sender, $pos1, $pos2, $args[6], $args[7], $args[8]);
+				new FillProcessing($sender, $pos1, $pos2, $args[6], $args[7], $args[8]);
 			}else{
 				$sender->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 			}
 		}elseif($sender instanceof Player){
-			$callback = function($player, $data) {
+			$callable = function($player, $data) {
 				if(! isset($data)) return;
 				$check_pos1 = $this->checkIntval($data[0], $data[1], $data[2]);
 				$check_pos2 = $this->checkIntval($data[3], $data[4], $data[5]);
-				if($check_pso1 and $check_pso2){
+				if($check_pos1 and $check_pos2){
 					$level_pos1 = $player->wep_pos1['level'] ?? $player->getLevel();
 					$level_pos2 = $player->wep_pos2['level'] ?? $player->getLevel();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);
 					$pos2 = new Position($data[3], $data[4], $data[5], $level_pos2);
-					#new FillProcessing($player, $pos1, $pos2, $data[6], FillProcessing::OPTION[$data[7]], $data[8]);
+					new FillProcessing($player, $pos1, $pos2, $data[6], FillProcessing::OPTION[$data[7]], $data[8]);
 				}else{
 					$player->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 				}
 			};
-			$form = $this->getDefaultForm($callback, $sender);
+			$form = $this->getDefaultForm($callable, $sender);
 			if($form === null)
 				return false;
 			$form->addInput(Language::get('form.block.one'), 'string');

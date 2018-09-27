@@ -26,6 +26,9 @@ use pocketmine\plugin\PluginBase;
 
 class WorldEditPlus extends PluginBase {
 
+	/** @var WorldEditPlus */
+	public static $owner;
+
 	public function onEnable() : void {
 
 		$resources = $this->getResources();
@@ -45,7 +48,7 @@ class WorldEditPlus extends PluginBase {
 		#	new CylinderCommand($this),
 		#	new SphereCommand($this)
 		]);
+		self::$owner = $this;
 	}
-
 
 }

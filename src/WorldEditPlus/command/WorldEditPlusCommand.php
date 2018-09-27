@@ -21,6 +21,7 @@ use WorldEditPlus\Language;
 use pocketmine\command\{Command, CommandSender};
 use pocketmine\utils\MainLogger;
 use pocketmine\Server;
+use pocketmine\utils\TextFormat;
 
 abstract class WorldEditPlusCommand extends Command {
 
@@ -54,7 +55,7 @@ abstract class WorldEditPlusCommand extends Command {
 		$success = $this->onCommand($sender, $args);
 
 		if(! $success and $this->usageMessage !== ""){
-			$usage = Server::getInstance()->getLanguage()->translateString("commands.generic.usage", [$this->usageMessage]);
+			$usage = Server::getInstance()->getLanguage()->translateString('commands.generic.usage', [$this->usageMessage]);
 			$sender->sendMessage($usage);
 		}
 
@@ -83,24 +84,24 @@ abstract class WorldEditPlusCommand extends Command {
 		parent::setDescription(Language::get($description));
 	}
 
-	public function getDefaultForm(callable $callback, CommandSender $sender) : ?object {
+	public function getDefaultForm(callable $callable, CommandSender $sender) : ?object {
 		$formapi = Server::getInstance()->getPluginManager()->getPlugin('FormAPI');
 		if($formapi === null) {
-			MainLogger::getLogger()->warning(Language::get('formapi.null.message'));
+			MainLogger::getLogger()->warning(Language::get('form.api.error'));
 			return null;
 		}
-		$form = $formapi->createCustomForm($callback);
+		$form = $formapi->createCustomForm($callable);
 		$form->setTitle(Language::get('form.message'));
-		$form->addInput(Language::get('form.pos.one.x'), 'int', $sender->wep_start['x'] ?? '');
-		$form->addInput(Language::get('form.pos.one.y'), 'int', $sender->wep_start['y'] ?? '');
-		$form->addInput(Language::get('form.pos.one.z'), 'int', $sender->wep_start['z'] ?? '');
-		$form->addInput(Language::get('form.pos.two.x'), 'int', $sender->wep_end['x'] ?? '');
-		$form->addInput(Language::get('form.pos.two.y'), 'int', $sender->wep_end['y'] ?? '');
-		$form->addInput(Language::get('form.pos.two.z'), 'int', $sender->wep_end['z'] ?? '');
+		$form->addInput(TextFormat::RED . Language::get('form.pos.one.x'), 'int', $sender->wep_start['x'] ?? '');
+		$form->addInput(TextFormat::GREEN . Language::get('form.pos.one.y'), 'int', $sender->wep_start['y'] ?? '');
+		$form->addInput(TextFormat::AQUA . Language::get('form.pos.one.z'), 'int', $sender->wep_start['z'] ?? '');
+		$form->addInput(TextFormat::RED . Language::get('form.pos.two.x'), 'int', $sender->wep_end['x'] ?? '');
+		$form->addInput(TextFormat::GREEN . Language::get('form.pos.two.y'), 'int', $sender->wep_end['y'] ?? '');
+		$form->addInput(TextFormat::AQUA . Language::get('form.pos.two.z'), 'int', $sender->wep_end['z'] ?? '');
 		return $form;
 	}
 
-	public function checkIntval($x, $y, $z) : bool {
+	public function checkIntval(string $x, string $y, string $z) : bool {
 		return is_numeric($x) and is_numeric($y) and is_numeric($z);
 	}
 

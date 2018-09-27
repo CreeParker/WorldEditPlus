@@ -16,9 +16,14 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\processing;
 
+use WorldEditPlus\WorldEditPlus;
+use WorldEditPlus\Language;
+use pocketmine\utils\TextFormat;
 use pocketmine\command\CommandSender;
 use pocketmine\level\Position;
 use pocketmine\Server;
+use pocketmine\item\Item;
+use pocketmine\scheduler\Task;
 
 abstract class WorldEditPlusProcessing {
 
@@ -84,25 +89,26 @@ abstract class WorldEditPlusProcessing {
 
 	public function start() : void {
 		if($this->level1 != $this->level2) {
-			$this->sender->sendMessage('始点と終点のワールドが違います');
+			$this->sender->sendMessage(TextFormat::RED . Language::get('processing.level.error'));
 			return;
 		}
-		$task = new Class extends Task {
+		$task = new class($this) extends Task {
 
-			public function __construct(WorldEditPlusAPI $owner) {
+			public function __construct(WorldEditPlusProcessing $owner) {
 				$this->generator = $owner->onRun();
 			}
 
 			public function onRun(int $tick) {
-				$stop = $this->generator->next();
+				$this->generator->next();
+				$stop = $this->generator->current();
+				var_dump($stop);
 				if($stop === true){
 					$this->getHandler()->cancel();
-					unset($player->wep_task);
 				}
 			}
 
 		};
-		$this->sender->task = Server::getInstance()->getScheduler()->scheduleRepeatingTask($task, 1);
+		$this->sender->task = WorldEditPlus::$owner->getScheduler()->scheduleRepeatingTask($task, 1);
 	}
 
 	/**
@@ -132,12 +138,14 @@ abstract class WorldEditPlusProcessing {
 		$this->level1 = $pos1->getLevel();
 		$this->level2 = $pos2->getLevel();
 		$this->id = self::$count++;
+		if($this->calculation())
+			$this->start();
 	}
 
 	/**
 	 * 整数化
 	 *
-	 * @param float|int $value
+	 * @param int|float|string $value
 	 *
 	 * @return int
 	 */
