@@ -107,16 +107,14 @@ abstract class WorldEditPlusCommand extends Command {
 	}
 
 	/**
-	 * @param string &...$number
+	 * @param string ...$number
 	 *
 	 * @return bool
 	 */
-	protected function checkInteger(string &...$number) : bool {
-		foreach($number as $key => $value) {
+	protected function checkNumber(string ...$number) : bool {
+		foreach($number as $value)
 			if(! is_numeric($value))
 				return false;
-			$number[$key] = (int) floor($value);
-		}
 		return true;
 	}
 

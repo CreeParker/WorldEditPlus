@@ -49,7 +49,7 @@ class FillCommand extends WorldEditPlusCommand {
 		if(isset($args[0])) {
 			if(! isset($args[6]))
 				return false;
-			if($this->checkInteger($args[0], $args[1], $args[2], $args[3], $args[4], $args[5])) {
+			if($this->checkNumber($args[0], $args[1], $args[2], $args[3], $args[4], $args[5])) {
 				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
 				$pos1 = new Position($args[0], $args[1], $args[2], $level);
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
@@ -63,7 +63,7 @@ class FillCommand extends WorldEditPlusCommand {
 			$callable = function($player, $data) {
 				if(! isset($data))
 					return;
-				if($this->checkInteger($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])){
+				if($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])){
 					$level_pos1 = $player->wep_pos1['level'] ?? $player->getLevel();
 					$level_pos2 = $player->wep_pos2['level'] ?? $player->getLevel();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);
