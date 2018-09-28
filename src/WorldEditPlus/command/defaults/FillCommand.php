@@ -14,15 +14,17 @@
 
 declare(strict_types = 1);
 
-namespace WorldEditPlus\command;
+namespace WorldEditPlus\command\defaults;
 
-use WorldEditPlus\WorldEditPlus;
-use WorldEditPlus\Language;
+use WorldEditPlus\command\WorldEditPlusCommand;
 use WorldEditPlus\processing\FillProcessing;
+use WorldEditPlus\Language;
+use WorldEditPlus\WorldEditPlus;
+
 use pocketmine\command\CommandSender;
-use pocketmine\level\{Position, Level};
-use pocketmine\Player;
+use pocketmine\level\Position;
 use pocketmine\utils\TextFormat;
+use pocketmine\Player;
 use pocketmine\Server;
 
 class FillCommand extends WorldEditPlusCommand {
@@ -47,9 +49,7 @@ class FillCommand extends WorldEditPlusCommand {
 		if(isset($args[0])) {
 			if(! isset($args[6]))
 				return false;
-			$check_pos1 = $this->checkIntval($args[0], $args[1], $args[2]);
-			$check_pos2 = $this->checkIntval($args[3], $args[4], $args[5]);
-			if($check_pos1 and $check_pos2) {
+			if($this->checkInteger($args[0], $args[1], $args[2], $args[3], $args[4], $args[5])) {
 				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
 				$pos1 = new Position($args[0], $args[1], $args[2], $level);
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
@@ -61,10 +61,9 @@ class FillCommand extends WorldEditPlusCommand {
 			}
 		}elseif($sender instanceof Player){
 			$callable = function($player, $data) {
-				if(! isset($data)) return;
-				$check_pos1 = $this->checkIntval($data[0], $data[1], $data[2]);
-				$check_pos2 = $this->checkIntval($data[3], $data[4], $data[5]);
-				if($check_pos1 and $check_pos2){
+				if(! isset($data))
+					return;
+				if($this->checkInteger($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])){
 					$level_pos1 = $player->wep_pos1['level'] ?? $player->getLevel();
 					$level_pos2 = $player->wep_pos2['level'] ?? $player->getLevel();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);

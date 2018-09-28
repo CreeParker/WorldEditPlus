@@ -16,12 +16,13 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\command;
 
-use WorldEditPlus\WorldEditPlus;
 use WorldEditPlus\Language;
-use pocketmine\command\{Command, CommandSender};
-use pocketmine\utils\MainLogger;
-use pocketmine\Server;
+use WorldEditPlus\WorldEditPlus;
+
+use pocketmine\command\utils\InvalidCommandSyntaxException;
+use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
+use pocketmine\Server;
 
 abstract class WorldEditPlusCommand extends Command {
 
@@ -32,7 +33,7 @@ abstract class WorldEditPlusCommand extends Command {
 	 * @param string $name
 	 * @param WorldEditPlus $owner
 	 */
-	public function __construct(string $name, WorldEditPlus $owner) {
+	protected function __construct(string $name, WorldEditPlus $owner) {
 		parent::__construct($name);
 		$this->owner = $owner;
 	}
@@ -54,10 +55,8 @@ abstract class WorldEditPlusCommand extends Command {
 
 		$success = $this->onCommand($sender, $args);
 
-		if(! $success and $this->usageMessage !== ""){
-			$usage = Server::getInstance()->getLanguage()->translateString('commands.generic.usage', [$this->usageMessage]);
-			$sender->sendMessage($usage);
-		}
+		if(! $success and $this->usageMessage !== "")
+			throw new InvalidCommandSyntaxException();
 
 		return $success;
 	}
@@ -68,7 +67,7 @@ abstract class WorldEditPlusCommand extends Command {
 	 *
 	 * @return bool
 	 */
-	abstract public function onCommand(CommandSender $sender, array $args) : bool;
+	abstract protected function onCommand(CommandSender $sender, array $args) : bool;
 
 	/**
 	 * @param string $usage
@@ -84,10 +83,16 @@ abstract class WorldEditPlusCommand extends Command {
 		parent::setDescription(Language::get($description));
 	}
 
-	public function getDefaultForm(callable $callable, CommandSender $sender) : ?object {
+	/**
+	 * @param callable $callable
+	 * @param CommandSender $sender
+	 *
+	 * @return ?CustomForm
+	 */
+	protected function getDefaultForm(callable $callable, CommandSender $sender) : ?object {
 		$formapi = Server::getInstance()->getPluginManager()->getPlugin('FormAPI');
 		if($formapi === null) {
-			MainLogger::getLogger()->warning(Language::get('form.api.error'));
+			WorldEditPlus::$instance->getLogger()->warning(Language::get('form.api.error'));
 			return null;
 		}
 		$form = $formapi->createCustomForm($callable);
@@ -101,8 +106,18 @@ abstract class WorldEditPlusCommand extends Command {
 		return $form;
 	}
 
-	public function checkIntval(string $x, string $y, string $z) : bool {
-		return is_numeric($x) and is_numeric($y) and is_numeric($z);
+	/**
+	 * @param string &...$number
+	 *
+	 * @return bool
+	 */
+	protected function checkInteger(string &...$number) : bool {
+		foreach($number as $key => $value) {
+			if(! is_numeric($value))
+				return false;
+			$number[$key] = (int) floor($value);
+		}
+		return true;
 	}
 
 }

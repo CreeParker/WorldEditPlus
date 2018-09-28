@@ -99,16 +99,17 @@ abstract class WorldEditPlusProcessing {
 			}
 
 			public function onRun(int $tick) {
-				$this->generator->next();
-				$stop = $this->generator->current();
-				var_dump($stop);
-				if($stop === true){
+				if($this->generator->current()){
+					var_dump('終了');
 					$this->getHandler()->cancel();
+				}else{
+					var_dump('次へ');
+					$this->generator->next();
 				}
 			}
 
 		};
-		$this->sender->task = WorldEditPlus::$owner->getScheduler()->scheduleRepeatingTask($task, 1);
+		$this->sender->task = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, 1);
 	}
 
 	/**
@@ -195,7 +196,7 @@ abstract class WorldEditPlusProcessing {
 	}
 
 	public function hasBlockRestriction() : bool {
-		if($this->restriction++ > 1000){
+		if(++$this->restriction >= 1000) {
 			$this->restriction = 0;
 			return true;
 		}

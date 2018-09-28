@@ -16,8 +16,6 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
-use pocketmine\utils\MainLogger;
-
 class Language {
 
 	private const FALLBACK_LANGUAGE = 'jpn';
@@ -38,12 +36,12 @@ class Language {
 		$path .= 'languages/' . $lang . '.ini';
 
 		if(! $this->loadLanguage($path, self::$language))
-			MainLogger::getLogger()->warning('言語ファイル「' . $lang . '.ini」が見つかりませんでした。');
+			WorldEditPlus::$instance->getLogger()->warning('言語ファイル「' . $lang . '.ini」が見つかりませんでした。');
 
 		$fall_path .= 'resources/languages/' . self::FALLBACK_LANGUAGE . '.ini';
 
 		if(! $this->loadLanguage($fall_path, self::$fall_language))
-			MainLogger::getLogger()->error('システムの言語ファイル「' . self::FALLBACK_LANGUAGE . '.ini」が見つかりませんでした。');
+			WorldEditPlus::$instance->getLogger()->error('システムの言語ファイル「' . self::FALLBACK_LANGUAGE . '.ini」が見つかりませんでした。');
 
 	}
 
