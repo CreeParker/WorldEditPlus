@@ -16,7 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
-use WorldEditPlus\command\{
+use WorldEditPlus\command\defaults\{
 	FillCommand,
 	CloneCommand,
 	CylinderCommand,
@@ -27,7 +27,7 @@ use pocketmine\plugin\PluginBase;
 class WorldEditPlus extends PluginBase {
 
 	/** @var WorldEditPlus */
-	private static $instance;
+	public static $instance;
 
 	public function onEnable() : void {
 

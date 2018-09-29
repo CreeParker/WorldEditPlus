@@ -20,7 +20,10 @@ use WorldEditPlus\WorldEditPlus;
 use WorldEditPlus\Language;
 use pocketmine\utils\TextFormat;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\level\{
+	Level,
+	Position
+};
 use pocketmine\Server;
 use pocketmine\item\Item;
 use pocketmine\scheduler\Task;
@@ -119,10 +122,17 @@ class RangeProcessing {
 	}
 
 	/**
-	 * @return number 
+	 * @return int
 	 */
-	public function getSize() : number {
+	public function getSize() : int {
 		return $this->side_x * $this->side_y * $this->side_z;
+	}
+
+	/**
+	 * @return Level
+	 */
+	public function getLevel() : Level {
+		return $this->pos1_level;
 	}
 
 	/**

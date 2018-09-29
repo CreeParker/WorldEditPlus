@@ -55,7 +55,7 @@ class FillCommand extends WorldEditPlusCommand {
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
 				$args[7] = $args[7] ?? 'set';
 				$args[8] = $args[8] ?? '';
-				new FillProcessing($sender, $pos1, $pos2, $args[6], $args[7], $args[8]);
+				(new FillProcessing($sender, $pos1, $pos2, $args[6], $args[7], $args[8]))->start();
 			}else{
 				$sender->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 			}
@@ -68,7 +68,7 @@ class FillCommand extends WorldEditPlusCommand {
 					$level_pos2 = $player->wep_pos2['level'] ?? $player->getLevel();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);
 					$pos2 = new Position($data[3], $data[4], $data[5], $level_pos2);
-					new FillProcessing($player, $pos1, $pos2, $data[6], FillProcessing::OPTION[$data[7]], $data[8]);
+					(new FillProcessing($player, $pos1, $pos2, $data[6], FillProcessing::OPTION[$data[7]], $data[8]))->start();
 				}else{
 					$player->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 				}

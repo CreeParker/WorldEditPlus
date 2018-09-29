@@ -26,16 +26,18 @@ use pocketmine\Server;
 
 class FillProcessing extends WorldEditPlusProcessing {
 
+	public const NAME = '/fill';
+
 	public const OPTION = ['set', 'outline', 'hollow', 'keep', 'replace'];
 
 	public function __construct(CommandSender $sender, Position $pos1, Position $pos2, string $block, string $option = self::OPTION[0], string $replace = '') {
+		parent::__construct($sender, $pos1, $pos2);
 		$this->block = $this->fromString($block);
 		$this->option = $option;
 		$this->replace = $this->fromString($replace);
-		parent::__construct($sender, $pos1, $pos2);
 	}
 
-	public function calculation() : bool {
+	public function onCheck() : bool {
 		if($this->block === null) {
 			$this->sender->sendMessage(TextFormat::RED . Language::get('processing.block.one.error'));
 			return false;
@@ -50,45 +52,39 @@ class FillProcessing extends WorldEditPlusProcessing {
 				return false;
 			}
 		}
-		$this->setMeter($this->sideX);
+		$this->setMeter($this->side_x);
 		return true;
 	}
 
-	public function onRun() {
-		$name = $this->sender->getName();
-		Server::getInstance()->broadcastMessage($name.'が/fillを実行しました (§e'. $this->sideX * $this->sideY * $this->sideZ .'ブロック§r)');
+	public function onRun() : iterable {
+		$this->startMessage(self::NAME);
 		$option = $this->option;
-		for($a = 0; abs($a) < $this->sideX; $a += $this->nextX) {
-
-			$x = $this->x1 + $a;
-
-			for($b = 0; abs($b) < $this->sideY; $b += $this->nextY) {
-
-				$y = $this->y1 + $b;
-				if($y < 0 or $y > Level::Y_MAX)
+		for($a = 0; abs($a) < $this->side_x; $a += $this->next_x) {
+			$x = $this->pos1_x + $a;
+			for($b = 0; abs($b) < $this->side_y; $b += $this->next_y) {
+				$y = $this->pos1_y + $b;
+				if($this->hasHeightLimit($y))
 					continue;
+				for($c = 0; abs($c) < $this->side_z; $c += $this->next_z){
+					$z = $this->pos1_z + $c;
+					$this->checkChunkLoaded($x, $z);
 
-				for($c = 0; abs($c) < $this->sideZ; $c += $this->nextZ){
-
-					$z = $this->z1 + $c;
-					if(! $this->level1->isChunkLoaded($x >> 4, $z >> 4))
-						$this->level1->loadChunk($x >> 4, $z >> 4, true);
 					$vector3 = new Vector3($x, $y, $z);
-					$old_block = $this->level1->getBlock($vector3);
+					$old_block = $this->level->getBlock($vector3);
 					$new_block = $this->$option($old_block);
 					if($new_block !== null)
-						$this->level1->setBlock($vector3, $new_block, true, false);
+						$this->level->setBlock($vector3, $new_block, false, false);
 					if($this->hasBlockRestriction())
 						yield false;
 				}
 			}
-			#$this->addMeter();
+			$this->addMeter();
 		}
-		Server::getInstance()->broadcastMessage($name.'の/fillが終了しました');
+		$this->endMessage(self::NAME);
 		yield true;
 	}
 
-	public function set(Block $block) : Block {
+	public function set(?Block $block = null) : Block {
 		$rand = array_rand($this->block);
 		return $this->block[$rand];
 	}
@@ -97,9 +93,9 @@ class FillProcessing extends WorldEditPlusProcessing {
 		$x = $block->x;
 		$y = $block->y;
 		$z = $block->z;
-		if($x != $this->minX and $x != $this->maxX)
-			if($y != $this->minY and $y != $this->maxY)
-				if($z != $this->minZ and $z != $this->maxZ)
+		if($x != $this->min_x and $x != $this->max_x)
+			if($y != $this->min_y and $y != $this->max_y)
+				if($z != $this->min_z and $z != $this->max_z)
 					return null;
 		return $this->set();
 	}
@@ -108,9 +104,9 @@ class FillProcessing extends WorldEditPlusProcessing {
 		$x = $block->x;
 		$y = $block->y;
 		$z = $block->z;
-		if($x != $this->minX and $x != $this->maxX)
-			if($y != $this->minY and $y != $this->maxY)
-				if($z != $this->minZ and $z != $this->maxZ)
+		if($x != $this->min_x and $x != $this->max_x)
+			if($y != $this->min_y and $y != $this->max_y)
+				if($z != $this->min_z and $z != $this->max_z)
 					return $this->air;
 		return $this->set();
 	}

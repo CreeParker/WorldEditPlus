@@ -20,18 +20,26 @@ use WorldEditPlus\WorldEditPlus;
 use WorldEditPlus\Language;
 use pocketmine\utils\TextFormat;
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\level\{
+	Level,
+	Position
+};
 use pocketmine\Server;
 use pocketmine\item\Item;
 use pocketmine\scheduler\Task;
+use pocketmine\block\Block;
 
 abstract class WorldEditPlusProcessing extends RangeProcessing {
 
 	/** @var array */
 	private static $message = [];
 
+	public static $scheduler = [];
+
 	private static $count = 0;
 
+	/** @var int */
+	private $id;
 	/** @var CommandSender */
 	public $sender;
 
@@ -43,33 +51,46 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 	/** @var int */
 	public $restriction = 0;
 
-	/** @var int */
-	private $id;
 
 	/**
+	 * @param CommandSender $sender
 	 * @param Position $pos1
 	 * @param Position $pos2
-	 * @param CommandSender $sender
 	 */
-	public function __construct(Position $pos1, Position $pos2, CommandSender $sender) {
+	public function __construct(CommandSender $sender, Position $pos1, Position $pos2) {
 		parent::__construct($pos1, $pos2);
 		$this->sender = $sender;
 		$this->id = self::$count++;
+		$this->air = Block::get(0);
 	}
 
+	/**
+	 * @return bool
+	 */
 	abstract public function onCheck() : bool;
 
-	abstract public function onRun() : Iterable;
+	/**
+	 * @return iterable 
+	 */
+	abstract public function onRun() : iterable;
 
 	public function start() : void {
+		$this->level = $this->getLevel();
+		if($this->level === null) {
+			$this->sender->sendMessage(TextFormat::RED . Language::get('processing.level.null.error'));
+			return;
+		}
 		if(! $this->isLevel()) {
 			$this->sender->sendMessage(TextFormat::RED . Language::get('processing.level.error'));
 			return;
 		}
+		if(! $this->onCheck())
+			return;
 		$task = new class($this) extends Task {
 
 			public function __construct(WorldEditPlusProcessing $owner) {
 				$this->generator = $owner->onRun();
+				$this->owner = $owner;
 			}
 
 			public function onRun(int $tick) {
@@ -79,38 +100,16 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 					$this->generator->next();
 			}
 
+			public function onCancel() {
+
+			}
+
 		};
-		$this->sender->task = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, 1);
+		$id = $this->id;
+		self::$scheduler[$id] = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, 1);
 	}
 
 	/**
-	 * 進行ゲージの値を設定
-	 *
-	 * @param float $value
-	 */
-	public function setMeter(float $value) : void {
-		$this->meter = 100 / $value;
-	}
-
-	/**
-	 * 進行ゲージを進める
-	 */
-	public function addMeter() : void {
-		$round = round($this->gage += $this->meter); 
-		BroadcastTipList::send($this->sender, $round);
-	}
-
-	public function hasBlockRestriction() : bool {
-		if(++$this->restriction >= 1000) {
-			$this->restriction = 0;
-			return true;
-		}
-		return false;
-	}
-
-	/**
-	 * ブロックオブジェクトを複数取得
-	 *
 	 * @param string $string
 	 *
 	 * @return array|null
@@ -131,13 +130,49 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 		}
 	}
 
-	public function sendTip(string $message) : void {
+	public function hasHeightLimit(int $y) : bool {
+		return $y < 0 or $y > Level::Y_MAX;
+	}
+
+	public function checkChunkLoaded(int $x, int $z) : void {
+		if(! $this->level->isChunkLoaded($x >> 4, $z >> 4))
+			$this->level->loadChunk($x >> 4, $z >> 4, true);
+	}
+
+	public function hasBlockRestriction() : bool {
+		if(++$this->restriction >= 1000) {
+			$this->restriction = 0;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * @param float $value
+	 */
+	public function setMeter(float $value) : void {
+		$this->meter = 100 / $value;
+	}
+
+	public function addMeter() : void {
+		$round = round($this->gage += $this->meter);
+		$name = $this->sender->getName();
 		$id = $this->id;
-		self::$message[$id] = $message;
-		foreach(self::$message as $value)
-			$list = isset($list) ? $list . PHP_EOL . $value : $value;
+		self::$message[$id] = Language::get('processing.meter', $name, $round);
+		foreach(self::$message as $message)
+			$list = isset($list) ? $list . TextFormat::EOL . $message : $message;
 		Server::getInstance()->broadcastTip($list);
-		var_dump($list);
+	}
+
+	public function startMessage(string $command) : void {
+		$name = $this->sender->getName();
+		$size = $this->getSize();
+		Server::getInstance()->broadcastMessage(Language::get('processing.start', $name, $command, $size));
+	}
+
+	public function endMessage(string $command) : void {
+		$name = $this->sender->getName();
+		Server::getInstance()->broadcastMessage(Language::get('processing.end', $name, $command));
 	}
 
 }

@@ -20,7 +20,10 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\utils\InvalidCommandSyntaxException;
-use pocketmine\command\CommandSender;
+use pocketmine\command\{
+	Command,
+	CommandSender
+};
 use pocketmine\utils\TextFormat;
 use pocketmine\Server;
 

@@ -65,9 +65,9 @@ class Language {
 	 *
 	 * @return string
 	 */
-	public static function get(string $text, array $params = []) : string {
+	public static function get(string $text, ...$params) : string {
 
-		$message = self::$language[$text] ?? self::$fall_language[$text] ?? '';
+		$message = self::$language[$text] ?? self::$fall_language[$text] ?? 'No Message.';
 
 		foreach($params as $key => $value)
 			$message = str_replace('{%' . $key . '}', $value, $message);
