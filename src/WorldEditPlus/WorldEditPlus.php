@@ -20,7 +20,11 @@ use WorldEditPlus\command\defaults\{
 	FillCommand,
 	CloneCommand,
 	CylinderCommand,
-	SphereCommand
+	SphereCommand,
+	WandCommand,
+	BookCommand,
+	Pos1Command,
+	Pos2Command
 };
 use pocketmine\plugin\PluginBase;
 
@@ -41,14 +45,17 @@ class WorldEditPlus extends PluginBase {
 		$fall_path = $this->getFile();
 		new Language($lang, $path, $fall_path);
 
-		$event = new EventListener($this);
-		#$this->getServer()->getPluginManager()->registerEvents($event, $this);
+		$this->getServer()->getPluginManager()->registerEvents((new EventListener), $this);
 
 		$this->getServer()->getCommandMap()->registerAll('worldeditplus', [
 			new FillCommand($this),
 		#	new CloneCommand($this),
 		#	new CylinderCommand($this),
 		#	new SphereCommand($this)
+			new WandCommand($this),
+			new BookCommand($this),
+			new Pos1Command($this),
+			new Pos2Command($this),
 		]);
 		
 	}

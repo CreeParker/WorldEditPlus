@@ -17,7 +17,7 @@ declare(strict_types = 1);
 namespace WorldEditPlus\command\defaults;
 
 use WorldEditPlus\command\WorldEditPlusCommand;
-use WorldEditPlus\processing\FillProcessing;
+use WorldEditPlus\processing\CylinderProcessing;
 use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
@@ -27,16 +27,16 @@ use pocketmine\utils\TextFormat;
 use pocketmine\Player;
 use pocketmine\Server;
 
-class FillCommand extends WorldEditPlusCommand {
+class CylinderCommand extends WorldEditPlusCommand {
 
 	/**
 	 * @param WorldEditPlus $owner
 	 */
 	public function __construct(WorldEditPlus $owner) {
-		parent::__construct('fill', $owner);
-		$this->setUsage('command.fill.usage');
-		$this->setDescription('command.fill.description');
-		$this->setPermission('worldeditplus.command.fill');
+		parent::__construct('cylinder', $owner);
+		$this->setUsage('command.cylinder.usage');
+		$this->setDescription('command.cylinder.description');
+		$this->setPermission('worldeditplus.command.cylinder');
 	}
 
 	/**
@@ -47,16 +47,14 @@ class FillCommand extends WorldEditPlusCommand {
 	 */
 	public function onCommand(CommandSender $sender, array $args) : bool {
 		if(isset($args[0])) {
-			if(! isset($args[6]))
+			if(! isset($args[7]))
 				return false;
 			if($this->checkNumber($args[0], $args[1], $args[2], $args[3], $args[4], $args[5])) {
 				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
 				$pos1 = new Position($args[0], $args[1], $args[2], $level);
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
-				$args[7] = $args[7] ?? FillProcessing::OPTION[0];
-				$args[8] = $args[8] ?? '';
-				$fill = new FillProcessing($sender, $pos1, $pos2, $args[6], $args[7], $args[8]);
-				$fill->start();
+				$cylinder = new CylinderProcessing($sender, $pos1, $pos2, $args[6], $args[7]);
+				$cylinder->start();
 			}else{
 				$sender->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 			}
@@ -64,13 +62,13 @@ class FillCommand extends WorldEditPlusCommand {
 			$callable = function($player, $data) {
 				if(! isset($data))
 					return;
-				if($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])){
+				if($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])) {
 					$level_pos1 = ($player->wep_pos1 ?? $player)->getLevel();
 					$level_pos2 = ($player->wep_pos2 ?? $player)->getLevel();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);
 					$pos2 = new Position($data[3], $data[4], $data[5], $level_pos2);
-					$fill = new FillProcessing($player, $pos1, $pos2, $data[6], FillProcessing::OPTION[$data[7]], $data[8]);
-					$fill->start();
+					$cylinder = new CylinderProcessing($player, $pos1, $pos2, $data[6], CylinderProcessing::DIRECTION[$data[7]]);
+					$cylinder->start();
 				}else{
 					$player->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 				}
@@ -79,15 +77,7 @@ class FillCommand extends WorldEditPlusCommand {
 			if($form === null)
 				return false;
 			$form->addInput(Language::get('form.block.one'), 'string');
-			$form->addDropdown(
-				Language::get('form.option') . TextFormat::EOL.
-				Language::get('form.option.set') . TextFormat::EOL.
-				Language::get('form.option.outline') . TextFormat::EOL.
-				Language::get('form.option.hollow') . TextFormat::EOL.
-				Language::get('form.option.keep') . TextFormat::EOL.
-				Language::get('form.option.replace') 
-			, FillProcessing::OPTION);
-			$form->addInput(Language::get('form.block.two'), 'string');
+			$form->addDropdown(Language::get('form.cylinder.direction'), CylinderProcessing::DIRECTION);
 			$form->sendToPlayer($sender);
 		}else{
 			return false;

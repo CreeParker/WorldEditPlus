@@ -64,13 +64,13 @@ class RangeProcessing {
 	 */
 	public function __construct(Position $pos1, Position $pos2) {
 
-		$this->pos1_x = $this->changeInteger($pos1->x);
-		$this->pos1_y = $this->changeInteger($pos1->y);
-		$this->pos1_z = $this->changeInteger($pos1->z);
+		$this->pos1_x = self::changeInteger($pos1->x);
+		$this->pos1_y = self::changeInteger($pos1->y);
+		$this->pos1_z = self::changeInteger($pos1->z);
 
-		$this->pos2_x = $this->changeInteger($pos2->x);
-		$this->pos2_y = $this->changeInteger($pos2->y);
-		$this->pos2_z = $this->changeInteger($pos2->z);
+		$this->pos2_x = self::changeInteger($pos2->x);
+		$this->pos2_y = self::changeInteger($pos2->y);
+		$this->pos2_z = self::changeInteger($pos2->z);
 
 		$this->pos1_level = $pos1->getLevel();
 		$this->pos2_level = $pos2->getLevel();
@@ -97,7 +97,7 @@ class RangeProcessing {
 	 *
 	 * @return int
 	 */
-	public function changeInteger($number) : int {
+	public static function changeInteger($number) : int {
 		return (int) floor((string) $number);
 	}
 

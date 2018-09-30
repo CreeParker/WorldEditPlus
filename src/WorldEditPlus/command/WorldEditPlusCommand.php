@@ -100,12 +100,18 @@ abstract class WorldEditPlusCommand extends Command {
 		}
 		$form = $formapi->createCustomForm($callable);
 		$form->setTitle(Language::get('form.message'));
-		$form->addInput(TextFormat::RED . Language::get('form.pos.one.x'), 'int', $sender->wep_start['x'] ?? '');
-		$form->addInput(TextFormat::GREEN . Language::get('form.pos.one.y'), 'int', $sender->wep_start['y'] ?? '');
-		$form->addInput(TextFormat::AQUA . Language::get('form.pos.one.z'), 'int', $sender->wep_start['z'] ?? '');
-		$form->addInput(TextFormat::RED . Language::get('form.pos.two.x'), 'int', $sender->wep_end['x'] ?? '');
-		$form->addInput(TextFormat::GREEN . Language::get('form.pos.two.y'), 'int', $sender->wep_end['y'] ?? '');
-		$form->addInput(TextFormat::AQUA . Language::get('form.pos.two.z'), 'int', $sender->wep_end['z'] ?? '');
+		$pos1_x = $sender->wep_pos1->x ?? '';
+		$pos1_y = $sender->wep_pos1->y ?? '';
+		$pos1_z = $sender->wep_pos1->z ?? '';
+		$pos2_x = $sender->wep_pos2->x ?? '';
+		$pos2_y = $sender->wep_pos2->y ?? '';
+		$pos2_z = $sender->wep_pos2->z ?? '';
+		$form->addInput(TextFormat::RED . Language::get('form.pos.one.x'), 'int', (string) $pos1_x);
+		$form->addInput(TextFormat::GREEN . Language::get('form.pos.one.y'), 'int', (string) $pos1_y);
+		$form->addInput(TextFormat::AQUA . Language::get('form.pos.one.z'), 'int', (string) $pos1_z);
+		$form->addInput(TextFormat::RED . Language::get('form.pos.two.x'), 'int', (string) $pos2_x);
+		$form->addInput(TextFormat::GREEN . Language::get('form.pos.two.y'), 'int', (string) $pos2_y);
+		$form->addInput(TextFormat::AQUA . Language::get('form.pos.two.z'), 'int', (string) $pos2_z);
 		return $form;
 	}
 

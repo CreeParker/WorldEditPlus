@@ -16,89 +16,98 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
-use pocketmine\event\block\{
-	BlockBreakEvent,
-	BlockPlaceEvent
-};
+use WorldEditPlus\processing\RangeProcessing;
+
+use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\Listener;
+use pocketmine\item\ItemIds;
+use pocketmine\level\Position;
+use pocketmine\utils\TextFormat;
+use pocketmine\Player;
 
 class EventListener implements Listener {
 
-	private $owner;
-
-	public function __construct(WorldEditPlus $owner) {
-		$this->owner = $owner;
+	/**
+	 * @param BlockBreakEvent $event
+	 */
+	public function BlockBreakEvent(BlockBreakEvent $event){
+		$this->WandEvent($event, true);
 	}
 
-	public function BlockBreak(BlockBreakEvent $event){
-		$this->setWand($event, 'wep_start');
-	}
-
-	//ブロックで座標を登録する
-	public function setWand($event, $wich){
+	/**
+	 * @param BlockBreakEvent|PlayerInteractEvent $event
+	 * @param bool $boolean
+	 */
+	public function WandEvent($event, bool $boolean) : void {
 		$player = $event->getPlayer();
-		if($player->isOp()){
-			$item = $event->getItem();
-			$item_id = $item->getId();
-			$item_name = $item->getName();
-			if($item_id === 271 and $item_name === 'wand'){
-				$event->setCancelled();
-				$position = $event->getBlock()->asPosition();
-				$this->setPosition($player, $position, $wich);
-			}
+		if(! $player->isOp())
+			return;
+		$item = $event->getItem();
+		$id = $item->getId();
+		$name = $item->getName();
+		if($id === ItemIds::WOODEN_AXE and $name === Language::get('wand.name')) {
+			$event->setCancelled();
+			$position = $event->getBlock()->asPosition();
+			self::setWandPosition($player, $position, $boolean);
 		}
 	}
 
-	//ブロックで座標を登録する
-	public function setPosition(Player $player, Position $position, string $wich){
-		//始点か終点の座標を登録する
-		$player->$wich = [
-			'x' => $x = floor((string) $position->x),
-			'y' => $y = floor((string) $position->y),
-			'z' => $z = floor((string) $position->z),
-			'level' => $position->getLevel()
-		];
-		if(isset($player->wep_start, $player->wep_end)){
-			$start = $player->wep_start;
-			$end = $player->wep_end;
-			$position_start = new Position($start['x'], $start['y'], $start['z'], $start['level']);
-			$position_end = new Position($end['x'], $end['y'], $end['z'], $end['level']);
-			$side = $this->getSide($position_start, $position_end);
-			$side_message = '(§e'.$side['x'] * $side['y'] * $side['z'].'ブロック§r)';
+	/**
+	 * @param Player $player
+	 * @param Position $position
+	 * @param bool $boolean
+	 */
+	public static function setWandPosition(Player $player, Position $position, bool $boolean) : void {
+		$branch = $boolean ? 'wep_pos1' : 'wep_pos2';
+		$player->$branch = $position;
+		if(isset($player->wep_pos1, $player->wep_pos2)) {
+			$size = (new RangeProcessing($player->wep_pos1, $player->wep_pos2))->getSize();
+			$message_size = Language::get('wand.size', $size);
 		}else{
-			$side_message = '';
+			$message_size = '';
 		}
-		if($wich === 'wep_start'){
-			$player->sendMessage("始点が設定されました §c{$x}§r, §a{$y}§r, §b{$z}§r $side_message");
-		}elseif($wich === 'wep_end'){
-			$player->sendMessage("終点が設定されました §c{$x}§r, §a{$y}§r, §b{$z}§r $side_message");
-		}
+		$x = TextFormat::RED . RangeProcessing::changeInteger($position->x) . TextFormat::RESET;
+		$y = TextFormat::GREEN . RangeProcessing::changeInteger($position->y) . TextFormat::RESET;
+		$z = TextFormat::AQUA . RangeProcessing::changeInteger($position->z) . TextFormat::RESET;
+		$message = Language::get($boolean ? 'wand.pos1' : 'wand.pos2', $x, $y, $z);
+		$player->sendMessage($message . $message_size);
 	}
 
-
-	//ブロックの情報を表示させる
-	public function PlayerInteract(PlayerInteractEvent $event){
+	/**
+	 * @param PlayerInteractEvent $event
+	 */
+	public function PlayerInteractEvent(PlayerInteractEvent $event) : void {
 		$action = $event->getAction();
-		if($action === 0 or $action === 1){
-			$player = $event->getPlayer();
-			//終点設定
-			$this->setWand($event, 'wep_end');
-			if($player->isOp()){
-				$id = $event->getItem()->getId();
-				if($id === 340){
-					$block = $event->getBlock();
-					$x = $block->x;
-					$y = $block->y;
-					$z = $block->z;
-					$name = $block->getName();
-					$id = $block->getId();
-					$meta = $block->getDamage();
-					var_dump(\json_encode($block, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
-					$player->sendMessage("＊$name ($id:$meta) [§c{$x}§r, §a{$y}§r, §b{$z}§r]");
-				}
-			}
-		}
+		if($action !== PlayerInteractEvent::LEFT_CLICK_BLOCK and $action !== PlayerInteractEvent::RIGHT_CLICK_BLOCK)
+			return;
+		$player = $event->getPlayer();
+		if($this->loopInteractMeasures($player))
+			return;
+		$this->WandEvent($event, false);
+		$item = $event->getItem()->getName();
+		if($item !== Language::get('book.name'))
+			return;
+		$block = $event->getBlock();
+		$name = $block->getName();
+		$id = $block->getId();
+		$meta = $block->getDamage();
+		$x = TextFormat::RED . $block->x . TextFormat::RESET;
+		$y = TextFormat::GREEN . $block->y . TextFormat::RESET;
+		$z = TextFormat::AQUA . $block->z . TextFormat::RESET;
+		$player->sendMessage(Language::get('book', $name, $id, $meta, $x, $y, $z));
+	}
+
+	/**
+	 * @param Player $player
+	 *
+	 * @return bool
+	 */
+	public function loopInteractMeasures(Player $player) : bool {
+		$wep_time = $player->wep_time ?? 0;
+		$time = $wep_time - microtime(true);
+		$player->wep_time = microtime(true);
+		return $time > -0.1;
 	}
 
 }

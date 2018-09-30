@@ -101,12 +101,17 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 			}
 
 			public function onCancel() {
-
+				$this->owner->remove();
 			}
 
 		};
 		$id = $this->id;
 		self::$scheduler[$id] = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, 1);
+	}
+
+	public function remove() : void {
+		$id = $this->id;
+		unset(self::$message[$id], self::$scheduler[$id]);
 	}
 
 	/**
