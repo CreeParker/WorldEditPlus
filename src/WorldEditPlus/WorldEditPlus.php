@@ -24,7 +24,8 @@ use WorldEditPlus\command\defaults\{
 	WandCommand,
 	BookCommand,
 	Pos1Command,
-	Pos2Command
+	Pos2Command,
+	CancelCommand
 };
 use pocketmine\plugin\PluginBase;
 
@@ -56,6 +57,7 @@ class WorldEditPlus extends PluginBase {
 			new BookCommand($this),
 			new Pos1Command($this),
 			new Pos2Command($this),
+			new CancelCommand($this),
 		]);
 		
 	}

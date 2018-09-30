@@ -107,6 +107,7 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 		};
 		$id = $this->id;
 		self::$scheduler[$id] = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, 1);
+		$this->sender->wep_scheduler = $id;
 	}
 
 	public function remove() : void {
@@ -163,21 +164,23 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 		$round = round($this->gage += $this->meter);
 		$name = $this->sender->getName();
 		$id = $this->id;
-		self::$message[$id] = Language::get('processing.meter', $name, $round);
+		self::$message[$id] = Language::get('processing.meter', $id, $name, $round);
 		foreach(self::$message as $message)
 			$list = isset($list) ? $list . TextFormat::EOL . $message : $message;
 		Server::getInstance()->broadcastTip($list);
 	}
 
 	public function startMessage(string $command) : void {
+		$id = $this->id;
 		$name = $this->sender->getName();
 		$size = $this->getSize();
-		Server::getInstance()->broadcastMessage(Language::get('processing.start', $name, $command, $size));
+		Server::getInstance()->broadcastMessage(Language::get('processing.start', $id, $name, $command, $size));
 	}
 
 	public function endMessage(string $command) : void {
+		$id = $this->id;
 		$name = $this->sender->getName();
-		Server::getInstance()->broadcastMessage(Language::get('processing.end', $name, $command));
+		Server::getInstance()->broadcastMessage(Language::get('processing.end', $id, $name, $command));
 	}
 
 }
