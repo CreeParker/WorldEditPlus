@@ -50,7 +50,7 @@ class WorldEditPlus extends PluginBase {
 		$this->getServer()->getCommandMap()->registerAll('worldeditplus', [
 			new BookCommand($this),
 			new CancelCommand($this),
-		#	new CloneCommand($this),
+			new CloneCommand($this),
 		#	new CylinderCommand($this),
 			new FillCommand($this),
 			new Pos1Command($this),

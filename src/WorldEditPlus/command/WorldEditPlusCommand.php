@@ -16,6 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\command;
 
+use WorldEditPlus\math\Range;
 use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
@@ -114,14 +115,16 @@ abstract class WorldEditPlusCommand extends Command {
 	}
 
 	/**
-	 * @param string ...$number
+	 * @param string &...$number
 	 *
 	 * @return bool
 	 */
-	protected function checkNumber(string ...$number) : bool {
-		foreach ($number as $value)
+	protected function checkNumber(string &...$number) : bool {
+		foreach ($number as $key => $value) {
 			if (! is_numeric($value))
 				return false;
+			$number[$key] = Range::changeInteger($value);
+		}
 		return true;
 	}
 

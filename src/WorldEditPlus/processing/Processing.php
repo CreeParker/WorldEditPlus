@@ -50,6 +50,8 @@ abstract class Processing extends Range {
 	public $gage = 0;
 
 	/** @var int */
+	public $stopper;
+	/** @var int */
 	public $restriction = 0;
 
 
@@ -63,12 +65,14 @@ abstract class Processing extends Range {
 		$this->sender = $sender;
 		$this->id = self::$count++;
 		$this->air = Block::get(BlockIds::AIR);
+		$this->stopper = WorldEditPlus::$instance->getConfig()->get('restriction', null) ?? 500;
+		var_dump($this->stopper);
 	}
 
 	/**
 	 * @return bool
 	 */
-	abstract public function onCheck() : bool;
+	abstract public function onCheck(CommandSender $sender) : bool;
 
 	/**
 	 * @return iterable 
@@ -85,7 +89,7 @@ abstract class Processing extends Range {
 			$this->sender->sendMessage(TextFormat::RED . Language::get('processing.level.error'));
 			return;
 		}
-		if (! $this->onCheck())
+		if (! $this->onCheck($this->sender))
 			return;
 		$task = new class($this) extends Task {
 
@@ -140,17 +144,17 @@ abstract class Processing extends Range {
 		return $y < 0 or $y > Level::Y_MAX;
 	}
 
-	public function checkChunkLoaded(int $x, int $z) : void {
-		if (! $this->level->isChunkLoaded($x >> 4, $z >> 4))
-			$this->level->loadChunk($x >> 4, $z >> 4, true);
+	public function checkChunkLoaded(Level $level, int $x, int $z) : void {
+		if (! $level->isChunkLoaded($x >> 4, $z >> 4))
+			$level->loadChunk($x >> 4, $z >> 4, true);
 	}
 
 	public function hasBlockRestriction() : bool {
-		if (++$this->restriction >= 1000) {
-			$this->restriction = 0;
-			return true;
-		}
-		return false;
+		if (++$this->restriction < $this->stopper)
+			return false;
+		$this->restriction = 0;
+		var_dump(true);
+		return true;
 	}
 
 	/**

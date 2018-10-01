@@ -68,9 +68,9 @@ class EventListener implements Listener {
 		} else {
 			$message_size = '';
 		}
-		$x = TextFormat::RED . Range::changeString($position->x) . TextFormat::RESET;
-		$y = TextFormat::GREEN . Range::changeString($position->y) . TextFormat::RESET;
-		$z = TextFormat::AQUA . Range::changeString($position->z) . TextFormat::RESET;
+		$x = TextFormat::RED . Range::changeInteger($position->x) . TextFormat::RESET;
+		$y = TextFormat::GREEN . Range::changeInteger($position->y) . TextFormat::RESET;
+		$z = TextFormat::AQUA . Range::changeInteger($position->z) . TextFormat::RESET;
 		$message = Language::get($boolean ? 'wand.pos1' : 'wand.pos2', $x, $y, $z);
 		$player->sendMessage($message . $message_size);
 	}

@@ -83,9 +83,9 @@ class CloneCommand extends WorldEditPlusCommand {
 			$form = $this->getDefaultForm($callable, $sender);
 			if ($form === null)
 				return false;
-			$form->addInput(TextFormat::RED . Language::get('form.pos.clone.x'), 'int', Range::changeString($sender->x));
-			$form->addInput(TextFormat::GREEN . Language::get('form.pos.clone.y'), 'int', Range::changeString($sender->y));
-			$form->addInput(TextFormat::AQUA . Language::get('form.pos.clone.z'), 'int', Range::changeString($sender->z));
+			$form->addInput(TextFormat::RED . Language::get('form.pos.clone.x'), 'int', (string) Range::changeInteger($sender->x));
+			$form->addInput(TextFormat::GREEN . Language::get('form.pos.clone.y'), 'int', (string) Range::changeInteger($sender->y));
+			$form->addInput(TextFormat::AQUA . Language::get('form.pos.clone.z'), 'int', (string) Range::changeInteger($sender->z));
 			$form->addDropdown(
 				Language::get('form.mask') . TextFormat::EOL.
 				Language::get('form.mask.replace') . TextFormat::EOL.
