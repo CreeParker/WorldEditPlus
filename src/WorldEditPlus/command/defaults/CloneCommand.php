@@ -17,10 +17,8 @@ declare(strict_types = 1);
 namespace WorldEditPlus\command\defaults;
 
 use WorldEditPlus\command\WorldEditPlusCommand;
-use WorldEditPlus\processing\{
-	CloneProcessing,
-	RangeProcessing
-};
+use WorldEditPlus\math\Range;
+use WorldEditPlus\processing\defaults\CloneProcessing;
 use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
@@ -49,10 +47,10 @@ class CloneCommand extends WorldEditPlusCommand {
 	 * @return bool
 	 */
 	public function onCommand(CommandSender $sender, array $args) : bool {
-		if(isset($args[0])) {
-			if(! isset($args[8]))
+		if (isset($args[0])) {
+			if (! isset($args[8]))
 				return false;
-			if($this->checkNumber($args[0], $args[1], $args[2], $args[3], $args[4], $args[5], $args[6], $args[7], $args[8])){
+			if ($this->checkNumber($args[0], $args[1], $args[2], $args[3], $args[4], $args[5], $args[6], $args[7], $args[8])) {
 				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
 				$pos1 = new Position($args[0], $args[1], $args[2], $level);
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
@@ -62,14 +60,14 @@ class CloneCommand extends WorldEditPlusCommand {
 				$args[11] = $args[11] ?? '';
 				$clone = new CloneProcessing($sender, $pos1, $pos2, $pos3, $args[9], $args[10], $args[11]);
 				$clone->start();
-			}else{
+			} else {
 				$sender->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 			}
-		}elseif($sender instanceof Player){
+		} elseif ($sender instanceof Player) {
 			$callable = function($player, $data) {
-				if(! isset($data))
+				if (! isset($data))
 					return;
-				if($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5], $data[6], $data[7], $data[8])){
+				if ($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5], $data[6], $data[7], $data[8])) {
 					$level_pos1 = ($player->wep_pos1 ?? $player)->getLevel();
 					$level_pos2 = ($player->wep_pos2 ?? $player)->getLevel();
 					$level_pos3 = $player->getLevel();
@@ -78,19 +76,16 @@ class CloneCommand extends WorldEditPlusCommand {
 					$pos3 = new Position($data[6], $data[7], $data[8], $level_pos3);
 					$clone = new CloneProcessing($player, $pos1, $pos2, $pos3, CloneProcessing::MASK[$data[9]], CloneProcessing::CLONE[$data[10]], $data[11]);
 					$clone->start();
-				}else{
+				} else {
 					$player->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 				}
 			};
 			$form = $this->getDefaultForm($callable, $sender);
-			if($form === null)
+			if ($form === null)
 				return false;
-			$x = (string) RangeProcessing::changeInteger($sender->x);
-			$y = (string) RangeProcessing::changeInteger($sender->y);
-			$z = (string) RangeProcessing::changeInteger($sender->z);
-			$form->addInput(TextFormat::RED . Language::get('form.pos.clone.x'), 'int', $x);
-			$form->addInput(TextFormat::GREEN . Language::get('form.pos.clone.y'), 'int', $y);
-			$form->addInput(TextFormat::AQUA . Language::get('form.pos.clone.z'), 'int', $z);
+			$form->addInput(TextFormat::RED . Language::get('form.pos.clone.x'), 'int', Range::changeString($sender->x));
+			$form->addInput(TextFormat::GREEN . Language::get('form.pos.clone.y'), 'int', Range::changeString($sender->y));
+			$form->addInput(TextFormat::AQUA . Language::get('form.pos.clone.z'), 'int', Range::changeString($sender->z));
 			$form->addDropdown(
 				Language::get('form.mask') . TextFormat::EOL.
 				Language::get('form.mask.replace') . TextFormat::EOL.
@@ -105,7 +100,7 @@ class CloneCommand extends WorldEditPlusCommand {
 			, CloneProcessing::CLONE);
 			$form->addInput(Language::get('form.block.one'), 'string');
 			$form->sendToPlayer($sender);
-		}else{
+		} else {
 			return false;
 		}
 		return true;

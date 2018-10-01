@@ -14,17 +14,20 @@
 
 declare(strict_types = 1);
 
-namespace WorldEditPlus\processing;
+namespace WorldEditPlus\processing\defaults;
+
+use WorldEditPlus\Language;
+use WorldEditPlus\processing\Processing;
 
 use pocketmine\block\Block;
-use pocketmine\level\{Level, Position};
+use pocketmine\level\Level;
+use pocketmine\level\Position;
 use pocketmine\command\CommandSender;
-use WorldEditPlus\Language;
 use pocketmine\utils\TextFormat;
 use pocketmine\math\Vector3;
 use pocketmine\Server;
 
-class FillProcessing extends WorldEditPlusProcessing {
+class FillProcessing extends Processing {
 
 	public const NAME = '/fill';
 

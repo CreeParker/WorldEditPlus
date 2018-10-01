@@ -21,14 +21,10 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\CommandSender;
-use pocketmine\item\enchantment\{
-	Enchantment,
-	EnchantmentInstance
-};
-use pocketmine\item\{
-	Item,
-	ItemIds,
-};
+use pocketmine\item\enchantment\Enchantment;
+use pocketmine\item\enchantment\EnchantmentInstance;
+use pocketmine\item\Item;
+use pocketmine\item\ItemIds;
 use pocketmine\utils\TextFormat;
 use pocketmine\Player;
 
@@ -51,7 +47,7 @@ class WandCommand extends WorldEditPlusCommand {
 	 * @return bool
 	 */
 	public function onCommand(CommandSender $sender, array $args) : bool {
-		if($sender instanceof Player){
+		if ($sender instanceof Player) {
 			$item = Item::get(ItemIds::WOODEN_AXE);
 			$enchant = new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::PROTECTION));
 			$item->addEnchantment($enchant);
@@ -62,7 +58,7 @@ class WandCommand extends WorldEditPlusCommand {
 			]);
 			$sender->getInventory()->addItem($item);
 			$sender->sendMessage(Language::get('command.wand'));
-		}else{
+		} else {
 			$sender->sendMessage(TextFormat::RED . Language::get('command.console.error'));
 		}
 		return true;

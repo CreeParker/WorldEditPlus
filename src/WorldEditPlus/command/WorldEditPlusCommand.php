@@ -20,10 +20,8 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\utils\InvalidCommandSyntaxException;
-use pocketmine\command\{
-	Command,
-	CommandSender
-};
+use pocketmine\command\Command;
+use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 use pocketmine\Server;
 
@@ -50,15 +48,15 @@ abstract class WorldEditPlusCommand extends Command {
 	 */
 	public function execute(CommandSender $sender, string $commandLabel, array $args) {
 
-		if(! $this->owner->isEnabled())
+		if (! $this->owner->isEnabled())
 			return false;
 
-		if(! $this->testPermission($sender))
+		if (! $this->testPermission($sender))
 			return false;
 
 		$success = $this->onCommand($sender, $args);
 
-		if(! $success and $this->usageMessage !== "")
+		if (! $success and $this->usageMessage !== "")
 			throw new InvalidCommandSyntaxException();
 
 		return $success;
@@ -90,11 +88,11 @@ abstract class WorldEditPlusCommand extends Command {
 	 * @param callable $callable
 	 * @param CommandSender $sender
 	 *
-	 * @return ?CustomForm
+	 * @return ?object
 	 */
 	protected function getDefaultForm(callable $callable, CommandSender $sender) : ?object {
 		$formapi = Server::getInstance()->getPluginManager()->getPlugin('FormAPI');
-		if($formapi === null) {
+		if ($formapi === null) {
 			WorldEditPlus::$instance->getLogger()->warning(Language::get('form.api.error'));
 			return null;
 		}
@@ -121,8 +119,8 @@ abstract class WorldEditPlusCommand extends Command {
 	 * @return bool
 	 */
 	protected function checkNumber(string ...$number) : bool {
-		foreach($number as $value)
-			if(! is_numeric($value))
+		foreach ($number as $value)
+			if (! is_numeric($value))
 				return false;
 		return true;
 	}

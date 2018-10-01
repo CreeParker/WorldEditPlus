@@ -16,20 +16,21 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\processing;
 
+use WorldEditPlus\math\Range;
 use WorldEditPlus\WorldEditPlus;
 use WorldEditPlus\Language;
-use pocketmine\utils\TextFormat;
-use pocketmine\command\CommandSender;
-use pocketmine\level\{
-	Level,
-	Position
-};
-use pocketmine\Server;
-use pocketmine\item\Item;
-use pocketmine\scheduler\Task;
-use pocketmine\block\Block;
 
-abstract class WorldEditPlusProcessing extends RangeProcessing {
+use pocketmine\block\Block;
+use pocketmine\block\BlockIds;
+use pocketmine\command\CommandSender;
+use pocketmine\item\Item;
+use pocketmine\level\Level;
+use pocketmine\level\Position;
+use pocketmine\scheduler\Task;
+use pocketmine\utils\TextFormat;
+use pocketmine\Server;
+
+abstract class Processing extends Range {
 
 	/** @var array */
 	private static $message = [];
@@ -61,7 +62,7 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 		parent::__construct($pos1, $pos2);
 		$this->sender = $sender;
 		$this->id = self::$count++;
-		$this->air = Block::get(0);
+		$this->air = Block::get(BlockIds::AIR);
 	}
 
 	/**
@@ -76,25 +77,25 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 
 	public function start() : void {
 		$this->level = $this->getLevel();
-		if($this->level === null) {
+		if ($this->level === null) {
 			$this->sender->sendMessage(TextFormat::RED . Language::get('processing.level.null.error'));
 			return;
 		}
-		if(! $this->isLevel()) {
+		if (! $this->isLevel()) {
 			$this->sender->sendMessage(TextFormat::RED . Language::get('processing.level.error'));
 			return;
 		}
-		if(! $this->onCheck())
+		if (! $this->onCheck())
 			return;
 		$task = new class($this) extends Task {
 
-			public function __construct(WorldEditPlusProcessing $owner) {
+			public function __construct(Processing $owner) {
 				$this->generator = $owner->onRun();
 				$this->owner = $owner;
 			}
 
 			public function onRun(int $tick) {
-				if($this->generator->current())
+				if ($this->generator->current())
 					$this->getHandler()->cancel();
 				else
 					$this->generator->next();
@@ -107,7 +108,6 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 		};
 		$id = $this->id;
 		self::$scheduler[$id] = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, 1);
-		$this->sender->wep_scheduler = $id;
 	}
 
 	public function remove() : void {
@@ -123,15 +123,15 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 	public function fromString(string $string) : ?array {
 		try {
 			$items = Item::fromString($string, true);
-			foreach($items as $item) {
+			foreach ($items as $item) {
 				$item_name = $item->getName();
 				$block = $item->getBlock();
 				$block_name = $block->getName();
-				if($item_name !== $block_name) return null;
+				if ($item_name !== $block_name) return null;
 				$blocks[(string) $block] = $block;
 			}
 			return $blocks;
-		}catch(\Exception $e){
+		} catch (\Exception $e) {
 			return null;
 		}
 	}
@@ -141,12 +141,12 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 	}
 
 	public function checkChunkLoaded(int $x, int $z) : void {
-		if(! $this->level->isChunkLoaded($x >> 4, $z >> 4))
+		if (! $this->level->isChunkLoaded($x >> 4, $z >> 4))
 			$this->level->loadChunk($x >> 4, $z >> 4, true);
 	}
 
 	public function hasBlockRestriction() : bool {
-		if(++$this->restriction >= 1000) {
+		if (++$this->restriction >= 1000) {
 			$this->restriction = 0;
 			return true;
 		}
@@ -165,7 +165,7 @@ abstract class WorldEditPlusProcessing extends RangeProcessing {
 		$name = $this->sender->getName();
 		$id = $this->id;
 		self::$message[$id] = Language::get('processing.meter', $id, $name, $round);
-		foreach(self::$message as $message)
+		foreach (self::$message as $message)
 			$list = isset($list) ? $list . TextFormat::EOL . $message : $message;
 		Server::getInstance()->broadcastTip($list);
 	}

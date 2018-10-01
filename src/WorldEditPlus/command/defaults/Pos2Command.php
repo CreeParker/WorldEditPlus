@@ -17,21 +17,11 @@ declare(strict_types = 1);
 namespace WorldEditPlus\command\defaults;
 
 use WorldEditPlus\command\WorldEditPlusCommand;
-use WorldEditPlus\{
-	EventListener,
-	Language,
-	WorldEditPlus
-};
+use WorldEditPlus\EventListener;
+use WorldEditPlus\Language;
+use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\CommandSender;
-use pocketmine\item\enchantment\{
-	Enchantment,
-	EnchantmentInstance
-};
-use pocketmine\item\{
-	Item,
-	ItemIds,
-};
 use pocketmine\level\Position;
 use pocketmine\utils\TextFormat;
 use pocketmine\Player;
@@ -55,23 +45,20 @@ class Pos2Command extends WorldEditPlusCommand {
 	 * @return bool
 	 */
 	public function onCommand(CommandSender $sender, array $args) : bool {
-		if($sender instanceof Player) {
-			if(isset($args[0])) {
-				if(! isset($args[2]))
-					return false;
-				if($this->checkNumber($args[0], $args[1], $args[2])) {
-					$level = $sender->getLevel();
-					$pos = new Position($args[0], $args[1], $args[2], $level);
-					EventListener::setWandPosition($sender, $pos, false);
-				}else{
-					$sender->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
-				}
-			}else{
-				$pos = $sender->asPosition();
-				EventListener::setWandPosition($sender, $pos, false);
-			}
-		}else{
+		if (! $sender instanceof Player) {
 			$sender->sendMessage(TextFormat::RED . Language::get('command.console.error'));
+		} elseif (isset($args[0])) {
+			if (! isset($args[2]))
+				return false;
+			if ($this->checkNumber($args[0], $args[1], $args[2])) {
+				$level = $sender->getLevel();
+				$pos = new Position($args[0], $args[1], $args[2], $level);
+				EventListener::setWandPosition($sender, $pos, false);
+			} else {
+				$sender->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
+			}
+		} else {
+			EventListener::setWandPosition($sender, $sender, false);
 		}
 		return true;
 	}

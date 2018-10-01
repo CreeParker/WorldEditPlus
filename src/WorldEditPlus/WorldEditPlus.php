@@ -16,17 +16,16 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
-use WorldEditPlus\command\defaults\{
-	FillCommand,
-	CloneCommand,
-	CylinderCommand,
-	SphereCommand,
-	WandCommand,
-	BookCommand,
-	Pos1Command,
-	Pos2Command,
-	CancelCommand
-};
+use WorldEditPlus\command\defaults\BookCommand;
+use WorldEditPlus\command\defaults\CancelCommand;
+use WorldEditPlus\command\defaults\CloneCommand;
+use WorldEditPlus\command\defaults\CylinderCommand;
+use WorldEditPlus\command\defaults\FillCommand;
+use WorldEditPlus\command\defaults\Pos1Command;
+use WorldEditPlus\command\defaults\Pos2Command;
+use WorldEditPlus\command\defaults\SphereCommand;
+use WorldEditPlus\command\defaults\WandCommand;
+
 use pocketmine\plugin\PluginBase;
 
 class WorldEditPlus extends PluginBase {
@@ -39,7 +38,7 @@ class WorldEditPlus extends PluginBase {
 		self::$instance = $this;
 
 		$resources = $this->getResources();
-		foreach($resources as $key => $value)
+		foreach ($resources as $key => $value)
 			$this->saveResource($key);
 		$lang = $this->getConfig()->get('language');
 		$path = $this->getDataFolder();
@@ -49,15 +48,15 @@ class WorldEditPlus extends PluginBase {
 		$this->getServer()->getPluginManager()->registerEvents((new EventListener), $this);
 
 		$this->getServer()->getCommandMap()->registerAll('worldeditplus', [
-			new FillCommand($this),
+			new BookCommand($this),
+			new CancelCommand($this),
 		#	new CloneCommand($this),
 		#	new CylinderCommand($this),
-		#	new SphereCommand($this)
-			new WandCommand($this),
-			new BookCommand($this),
+			new FillCommand($this),
 			new Pos1Command($this),
 			new Pos2Command($this),
-			new CancelCommand($this),
+		#	new SphereCommand($this)
+			new WandCommand($this),
 		]);
 		
 	}

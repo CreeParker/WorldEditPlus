@@ -14,45 +14,42 @@
 
 declare(strict_types = 1);
 
-namespace WorldEditPlus\processing;
+namespace WorldEditPlus\math;
 
-use WorldEditPlus\WorldEditPlus;
-use WorldEditPlus\Language;
-use pocketmine\utils\TextFormat;
-use pocketmine\command\CommandSender;
-use pocketmine\level\{
-	Level,
-	Position
-};
-use pocketmine\Server;
-use pocketmine\item\Item;
-use pocketmine\scheduler\Task;
+use pocketmine\level\Level;
+use pocketmine\level\Position;
 
-class RangeProcessing {
+class Range {
 
 	/** @var int */
 	public $x_pos1;
 	public $y_pos1;
 	public $z_pos1;
+
 	/** @var int */
 	public $x_pos2;
 	public $y_pos2;
 	public $z_pos2;
+
 	/** @var Level */
 	public $level_pos1;
 	public $level_pos2;
+
 	/** @var int */
 	public $min_x;
 	public $min_y;
 	public $min_z;
+
 	/** @var int */
 	public $max_x;
 	public $max_y;
 	public $max_z;
+
 	/** @var int */
 	public $side_x;
 	public $side_y;
 	public $side_z;
+	
 	/** @var int */
 	public $next_x;
 	public $next_y;
@@ -64,13 +61,13 @@ class RangeProcessing {
 	 */
 	public function __construct(Position $pos1, Position $pos2) {
 
-		$this->pos1_x = self::changeInteger($pos1->x);
-		$this->pos1_y = self::changeInteger($pos1->y);
-		$this->pos1_z = self::changeInteger($pos1->z);
+		$this->pos1_x = $this->changeInteger($pos1->x);
+		$this->pos1_y = $this->changeInteger($pos1->y);
+		$this->pos1_z = $this->changeInteger($pos1->z);
 
-		$this->pos2_x = self::changeInteger($pos2->x);
-		$this->pos2_y = self::changeInteger($pos2->y);
-		$this->pos2_z = self::changeInteger($pos2->z);
+		$this->pos2_x = $this->changeInteger($pos2->x);
+		$this->pos2_y = $this->changeInteger($pos2->y);
+		$this->pos2_z = $this->changeInteger($pos2->z);
 
 		$this->pos1_level = $pos1->getLevel();
 		$this->pos2_level = $pos2->getLevel();
@@ -90,6 +87,7 @@ class RangeProcessing {
 		$this->next_x = $this->getNext($this->pos1_x, $this->pos2_x);
 		$this->next_y = $this->getNext($this->pos1_y, $this->pos2_y);
 		$this->next_z = $this->getNext($this->pos1_z, $this->pos2_z);
+
 	}
 
 	/**
@@ -97,8 +95,17 @@ class RangeProcessing {
 	 *
 	 * @return int
 	 */
-	public static function changeInteger($number) : int {
+	public function changeInteger($number) : int {
 		return (int) floor((string) $number);
+	}
+
+	/**
+	 * @param int|float|string $number
+	 *
+	 * @return int
+	 */
+	public static function changeString($number) : string {
+		return floor((string) $number);
 	}
 
 	/**
@@ -118,7 +125,7 @@ class RangeProcessing {
 	 * @return int
 	 */
 	public function getNext(int $start, int $end) : int {
-		return ($start < $end) ? 1 : -1;
+		return $start < $end ? 1 : -1;
 	}
 
 	/**

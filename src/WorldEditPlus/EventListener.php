@@ -16,7 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
-use WorldEditPlus\processing\RangeProcessing;
+use WorldEditPlus\math\Range;
 
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\player\PlayerInteractEvent;
@@ -41,12 +41,12 @@ class EventListener implements Listener {
 	 */
 	public function WandEvent($event, bool $boolean) : void {
 		$player = $event->getPlayer();
-		if(! $player->isOp())
+		if (! $player->isOp())
 			return;
 		$item = $event->getItem();
 		$id = $item->getId();
 		$name = $item->getName();
-		if($id === ItemIds::WOODEN_AXE and $name === Language::get('wand.name')) {
+		if ($id === ItemIds::WOODEN_AXE and $name === Language::get('wand.name')) {
 			$event->setCancelled();
 			$position = $event->getBlock()->asPosition();
 			self::setWandPosition($player, $position, $boolean);
@@ -61,15 +61,16 @@ class EventListener implements Listener {
 	public static function setWandPosition(Player $player, Position $position, bool $boolean) : void {
 		$branch = $boolean ? 'wep_pos1' : 'wep_pos2';
 		$player->$branch = $position;
-		if(isset($player->wep_pos1, $player->wep_pos2)) {
-			$size = (new RangeProcessing($player->wep_pos1, $player->wep_pos2))->getSize();
+		if (isset($player->wep_pos1, $player->wep_pos2)) {
+			$range = new Range($player->wep_pos1, $player->wep_pos2);
+			$size = $range->getSize();
 			$message_size = Language::get('wand.size', $size);
-		}else{
+		} else {
 			$message_size = '';
 		}
-		$x = TextFormat::RED . RangeProcessing::changeInteger($position->x) . TextFormat::RESET;
-		$y = TextFormat::GREEN . RangeProcessing::changeInteger($position->y) . TextFormat::RESET;
-		$z = TextFormat::AQUA . RangeProcessing::changeInteger($position->z) . TextFormat::RESET;
+		$x = TextFormat::RED . Range::changeString($position->x) . TextFormat::RESET;
+		$y = TextFormat::GREEN . Range::changeString($position->y) . TextFormat::RESET;
+		$z = TextFormat::AQUA . Range::changeString($position->z) . TextFormat::RESET;
 		$message = Language::get($boolean ? 'wand.pos1' : 'wand.pos2', $x, $y, $z);
 		$player->sendMessage($message . $message_size);
 	}
@@ -79,14 +80,16 @@ class EventListener implements Listener {
 	 */
 	public function PlayerInteractEvent(PlayerInteractEvent $event) : void {
 		$action = $event->getAction();
-		if($action !== PlayerInteractEvent::LEFT_CLICK_BLOCK and $action !== PlayerInteractEvent::RIGHT_CLICK_BLOCK)
+		if ($action !== PlayerInteractEvent::LEFT_CLICK_BLOCK and $action !== PlayerInteractEvent::RIGHT_CLICK_BLOCK)
 			return;
 		$player = $event->getPlayer();
-		if($this->loopInteractMeasures($player))
+		if ($this->loopInteractMeasures($player))
 			return;
 		$this->WandEvent($event, false);
-		$item = $event->getItem()->getName();
-		if($item !== Language::get('book.name'))
+		$item = $event->getItem();
+		$id = $item->getId();
+		$name = $item->getName();
+		if ($id !== ItemIds::BOOK and $name !== Language::get('book.name'))
 			return;
 		$block = $event->getBlock();
 		$name = $block->getName();
@@ -104,10 +107,10 @@ class EventListener implements Listener {
 	 * @return bool
 	 */
 	public function loopInteractMeasures(Player $player) : bool {
-		$wep_time = $player->wep_time ?? 0;
-		$time = $wep_time - microtime(true);
+		$time = $player->wep_time ?? 0;
+		$difference = $time - microtime(true);
 		$player->wep_time = microtime(true);
-		return $time > -0.1;
+		return $difference > -0.1;
 	}
 
 }

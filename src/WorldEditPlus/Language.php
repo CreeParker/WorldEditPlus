@@ -35,12 +35,12 @@ class Language {
 
 		$path .= 'languages/' . $lang . '.ini';
 
-		if(! $this->loadLanguage($path, self::$language))
+		if (! $this->loadLanguage($path, self::$language))
 			WorldEditPlus::$instance->getLogger()->warning('言語ファイル「' . $lang . '.ini」が見つかりませんでした。');
 
 		$fall_path .= 'resources/languages/' . self::FALLBACK_LANGUAGE . '.ini';
 
-		if(! $this->loadLanguage($fall_path, self::$fall_language))
+		if (! $this->loadLanguage($fall_path, self::$fall_language))
 			WorldEditPlus::$instance->getLogger()->error('システムの言語ファイル「' . self::FALLBACK_LANGUAGE . '.ini」が見つかりませんでした。');
 
 	}
@@ -52,7 +52,7 @@ class Language {
 	 * @return bool
 	 */
 	private function loadLanguage(string $path, array &$language) : bool {
-		if(! file_exists($path))
+		if (! file_exists($path))
 			return false;
 		$decode = parse_ini_file($path, false, INI_SCANNER_RAW);
 		$language = array_map('stripcslashes', $decode);
@@ -69,7 +69,7 @@ class Language {
 
 		$message = self::$language[$text] ?? self::$fall_language[$text] ?? 'No Message.';
 
-		foreach($params as $key => $value)
+		foreach ($params as $key => $value)
 			$message = str_replace('{%' . $key . '}', $value, $message);
 
 		return $message;
