@@ -65,7 +65,7 @@ abstract class Processing extends Range {
 		$this->sender = $sender;
 		$this->id = self::$count++;
 		$this->air = Block::get(BlockIds::AIR);
-		$this->stopper = WorldEditPlus::$instance->getConfig()->get('restriction', null) ?? 500;
+		$this->stopper = WorldEditPlus::$instance->getConfig()->get('stopper', null) ?? 500;
 		var_dump($this->stopper);
 	}
 
