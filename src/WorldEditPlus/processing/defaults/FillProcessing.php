@@ -25,7 +25,6 @@ use pocketmine\level\Position;
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 use pocketmine\math\Vector3;
-use pocketmine\Server;
 
 class FillProcessing extends Processing {
 

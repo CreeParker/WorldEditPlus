@@ -149,11 +149,11 @@ abstract class Processing extends Range {
 			$level->loadChunk($x >> 4, $z >> 4, true);
 	}
 
-	public function hasBlockRestriction() : bool {
-		if (++$this->restriction < $this->stopper)
+	public function hasBlockRestriction(int $count = 1) : bool {
+		$this->restriction += $count;
+		if ($this->restriction < $this->stopper)
 			return false;
 		$this->restriction = 0;
-		var_dump(true);
 		return true;
 	}
 

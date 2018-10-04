@@ -47,7 +47,7 @@ class SphereCommand extends WorldEditPlusCommand {
 	 */
 	public function onCommand(CommandSender $sender, array $args) : bool {
 		if (isset($args[0])) {
-			if (! isset($args[7]))
+			if (! isset($args[6]))
 				return false;
 			if ($this->checkNumber($args[0], $args[1], $args[2], $args[3], $args[4], $args[5])) {
 				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
