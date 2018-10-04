@@ -77,7 +77,7 @@ class CloneProcessing extends Processing {
 				$old_y = $this->pos1_y + $b;
 				$new_y = $pos3_y + $b;
 				if($this->hasHeightLimit($old_y) or $this->hasHeightLimit($new_y))
-					break;
+					continue;
 				for($c = 0; abs($c) < $this->side_z; $c += $this->next_z){
 					$old_z = $this->pos1_z + $c;
 					$new_z = $pos3_z + $c;

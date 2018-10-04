@@ -62,7 +62,7 @@ class FillProcessing extends Processing {
 			for ($b = 0; abs($b) < $this->side_y; $b += $this->next_y) {
 				$y = $this->pos1_y + $b;
 				if ($this->hasHeightLimit($y))
-					break;
+					continue;
 				for ($c = 0; abs($c) < $this->side_z; $c += $this->next_z){
 					$z = $this->pos1_z + $c;
 					if ($this->hasBlockRestriction())
