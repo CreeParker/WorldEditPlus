@@ -16,7 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
-use WorldEditPlus\math\Range;
+use WorldEditPlus\level\Range;
 
 use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\player\PlayerInteractEvent;

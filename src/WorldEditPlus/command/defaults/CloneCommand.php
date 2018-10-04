@@ -17,7 +17,7 @@ declare(strict_types = 1);
 namespace WorldEditPlus\command\defaults;
 
 use WorldEditPlus\command\WorldEditPlusCommand;
-use WorldEditPlus\math\Range;
+use WorldEditPlus\level\Range;
 use WorldEditPlus\processing\defaults\CloneProcessing;
 use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;

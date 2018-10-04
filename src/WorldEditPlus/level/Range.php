@@ -14,7 +14,7 @@
 
 declare(strict_types = 1);
 
-namespace WorldEditPlus\math;
+namespace WorldEditPlus\level;
 
 use pocketmine\level\Level;
 use pocketmine\level\Position;
@@ -88,6 +88,22 @@ class Range {
 		$this->next_y = $this->getNext($this->pos1_y, $this->pos2_y);
 		$this->next_z = $this->getNext($this->pos1_z, $this->pos2_z);
 
+	}
+
+	public function getX(bool $bool = true) : int {
+		return $bool ? $this->pos1_x : $this->pos2_x;
+	}
+
+	public function getY(bool $bool = true) : int {
+		return $bool ? $this->pos1_y : $this->pos2_y;
+	}
+
+	public function getZ(bool $bool = true) : int {
+		return $bool ? $this->pos1_z : $this->pos2_z;
+	}
+
+	public function getSideX(bool $bool = true) : int {
+		return $bool ? $this->side_x : $this->side_x
 	}
 
 	/**

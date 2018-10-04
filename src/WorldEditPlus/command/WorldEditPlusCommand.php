@@ -16,7 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\command;
 
-use WorldEditPlus\math\Range;
+use WorldEditPlus\level\Range;
 use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
