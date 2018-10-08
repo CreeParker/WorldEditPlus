@@ -46,6 +46,7 @@ class SphereProcessing extends Processing {
 
 	public function onRun() : iterable {
 		$this->startMessage(self::NAME);
+
 		$radius_x = ($this->side_x - 1) / 2;
 		$radius_y = ($this->side_y - 1) / 2;
 		$radius_z = ($this->side_z - 1) / 2;
@@ -54,20 +55,20 @@ class SphereProcessing extends Processing {
 		$center_y = $this->pos1_y + ($radius_y * $this->next_y);
 		$center_z = $this->pos1_z + ($radius_z * $this->next_z);
 
+		var_dump($radius_x, $radius_y, $radius_z);
+		var_dump($center_x, $center_y, $center_z);
+
 		$vector3 = new Vector3($center_x, $center_y, $center_z);
 
-        $ceil_radius_x = (int) ceil($radius_x += 0.5);
-        $ceil_radius_y = (int) ceil($radius_y += 0.5);
-        $ceil_radius_z = (int) ceil($radius_z += 0.5);
-
-        $inv_radius_x = 1 / $radius_x;
-        $inv_radius_y = 1 / $radius_y;
-        $inv_radius_z = 1 / $radius_z;
+        $inv_radius_x = 1 / ($radius_x);
+        $inv_radius_y = 1 / ($radius_y);
+        $inv_radius_z = 1 / ($radius_z);
 
         $next_x = 0;
 		$break_x = false;
 
-		for($x = 0; $x <= $ceil_radius_x and $break_x === false; ++$x) {
+		for($x = 0; $x <= $radius_x and $break_x === false; $x += 0.5) {
+			var_dump($x);
 
 			$xn = $next_x;
 			$next_x = ($x + 1) * $inv_radius_x;
@@ -75,14 +76,14 @@ class SphereProcessing extends Processing {
 			$next_y = 0;
 			$break_y = false;
 
-			for($y = 0; $y <= $ceil_radius_y and $break_y === false; ++$y) {
+			for($y = 0; $y <= $radius_y and $break_y === false; $y += 0.5) {
 
 				$yn = $next_y;
 				$next_y = ($y + 1) * $inv_radius_y;
 
 				$next_z = 0;
 
-				for($z = 0; $z <= $ceil_radius_z; ++$z) {
+				for($z = 0; $z <= $radius_z; $z += 0.5) {
 
 					$zn = $next_z;
 					$next_z = ($z + 1) * $inv_radius_z;
@@ -111,21 +112,32 @@ class SphereProcessing extends Processing {
 					#	}
 					#}
 
-					$this->level->setBlock($vector3->add($x, $y, $z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add(-$x, $y, $z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add($x, -$y, $z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add($x, $y, -$z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add(-$x, -$y, $z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add($x, -$y, -$z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add(-$x, $y, -$z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add(-$x, -$y, -$z), $this->set(), false, false);
+					#var_dump($vector3->add($x, $y, $z));
+
+					$this->level->setBlock(($a = $vector3->add($x, $y, $z)->ceil()), $this->set(), false, false);
+					$this->level->setBlock(($vector3->add(-$x, -$y, -$z)->ceil()), $this->set(), false, false);
+					$this->level->setBlock(($vector3->add(-$x, $y, $z)->ceil()), $this->set(), false, false);
+					$this->level->setBlock(($vector3->add($x, -$y, $z)->ceil()), $this->set(), false, false);
+					$this->level->setBlock(($vector3->add($x, $y, -$z)->ceil()), $this->set(), false, false);
+					$this->level->setBlock(($vector3->add($x, -$y, -$z)->ceil()), $this->set(), false, false);
+					$this->level->setBlock(($vector3->add(-$x, $y, -$z)->ceil()), $this->set(), false, false);
+					$this->level->setBlock(($vector3->add(-$x, -$y, $z)->ceil()), $this->set(), false, false);
 					
 				}
 			}
+			var_dump($a->x);
 		}
 
 		$this->endMessage(self::NAME);
 		yield true;
+	}
+
+	public function int(Vector3 $vector3) : Vector3 {
+		return new Vector3(
+			(int) $vector3->x,
+			(int) $vector3->y,
+			(int) $vector3->z
+		);
 	}
 
 	public function set($xn = null, $yn = null, $zn = null, $next_x = null, $next_y = null, $next_z = null, $block = null) : Block {

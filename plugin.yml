@@ -3,5 +3,4 @@ main: WorldEditPlus\WorldEditPlus
 version: 3
 api: [3.0.0, 4.0.0]
 author: CreeParker (@cree_parker)
-description: このプラグインは、ワールドエディッタです。
 website: https://forum.mcbe.jp/resources/107/

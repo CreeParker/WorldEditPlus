@@ -22,18 +22,18 @@ use pocketmine\level\Position;
 class Range {
 
 	/** @var int */
-	protected $x_pos1;
-	protected $y_pos1;
-	protected $z_pos1;
+	public $pos1_x;
+	public $pos1_y;
+	public $pos1_z;
 
 	/** @var int */
-	protected $x_pos2;
-	protected $y_pos2;
-	protected $z_pos2;
+	protected $pos2_x;
+	protected $pos2_y;
+	protected $pos2_z;
 
 	/** @var Level */
-	protected $level_pos1;
-	protected $level_pos2;
+	protected $pos1_level;
+	protected $pos2_level;
 
 	/** @var int */
 	protected $min_x;
@@ -46,14 +46,14 @@ class Range {
 	protected $max_z;
 
 	/** @var int */
-	protected $side_x;
-	protected $side_y;
-	protected $side_z;
+	public $side_x;
+	public $side_y;
+	public $side_z;
 	
 	/** @var int */
-	protected $next_x;
-	protected $next_y;
-	protected $next_z;
+	public $next_x;
+	public $next_y;
+	public $next_z;
 
 	/**
 	 * @param Position $pos1
@@ -89,23 +89,7 @@ class Range {
 		$this->next_z = $this->getNext($this->pos1_z, $this->pos2_z);
 
 	}
-
-	public function getX(bool $bool = true) : int {
-		return $bool ? $this->pos1_x : $this->pos2_x;
-	}
-
-	public function getY(bool $bool = true) : int {
-		return $bool ? $this->pos1_y : $this->pos2_y;
-	}
-
-	public function getZ(bool $bool = true) : int {
-		return $bool ? $this->pos1_z : $this->pos2_z;
-	}
-
-	public function getSideX(bool $bool = true) : int {
-		return $bool ? $this->side_x : $this->side_x
-	}
-
+	
 	/**
 	 * @param int|float|string $number
 	 *

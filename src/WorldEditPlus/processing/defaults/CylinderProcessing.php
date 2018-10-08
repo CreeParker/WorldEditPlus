@@ -35,6 +35,7 @@ class CylinderProcessing extends Processing {
 	public function __construct(CommandSender $sender, Position $pos1, Position $pos2, string $block, string $direction) {
 		parent::__construct($sender, $pos1, $pos2);
 		$this->block = $this->fromString($block);
+		$this->direction = $direction;
 		#$this->filled = false;
 	}
 
@@ -42,17 +43,43 @@ class CylinderProcessing extends Processing {
 		if ($this->block === null) {
 			$sender->sendMessage(TextFormat::RED . Language::get('processing.block.one.error'));
 			return false;
+		} elseif (! in_array($this->direction, self::DIRECTION)) {
+			$sender->sendMessage(TextFormat::RED . Language::get('processing.cylinder.direction.error'));
+			return false;
 		}
 		return true;
 	}
 
 	public function onRun() : iterable {
 		$this->startMessage(self::NAME);
-		$radius_y = ($this->side_y - 1) / 2;
-		$radius_z = ($this->side_z - 1) / 2;
 
-		$center_y = $this->pos1_y + ($radius_y * $this->next_y);
-		$center_z = $this->pos1_z + ($radius_z * $this->next_z);
+		$copy = self::DIRECTION;
+		$direction = $this->direction;
+		$key = array_search($direction, $copy);
+		unset($copy[$key]);
+		array_unshift($copy, $direction);
+
+		$direction_x = $copy[0];
+		$direction_y = $copy[1];
+		$direction_z = $copy[2];
+
+		$pos1_x = 'pos1_' . $direction_x;
+		$pos1_y = 'pos1_' . $direction_y;
+		$pos1_z = 'pos1_' . $direction_z;
+
+		$side_x = 'side_' . $direction_x;
+		$side_y = 'side_' . $direction_y;
+		$side_z = 'side_' . $direction_z;
+
+		$next_x = 'next_' . $direction_x;
+		$next_y = 'next_' . $direction_y;
+		$next_z = 'next_' . $direction_z;
+
+		$radius_y = ($this->$side_y - 1) / 2;
+		$radius_z = ($this->$side_z - 1) / 2;
+
+		$center_y = $this->$pos1_y + ($radius_y * $this->$next_y);
+		$center_z = $this->$pos1_z + ($radius_z * $this->$next_z);
 
         $ceil_radius_y = (int) ceil($radius_y += 0.5);
         $ceil_radius_z = (int) ceil($radius_z += 0.5);
@@ -60,11 +87,16 @@ class CylinderProcessing extends Processing {
         $inv_radius_y = 1 / $radius_y;
         $inv_radius_z = 1 / $radius_z;
 
-		for($a = 0; abs($a) < $this->side_x; $x += $this->next_x) {
+		for($a = 0; abs($a) < $this->$side_x; $x += $this->$next_x) {
 
-			$x = $this->pos1_x + $a;
+			$x = $this->$pos1_x + $a;
 
-			$vector3 = new Vector3($x, $center_y, $center_z);
+			if ($direction_x === self::DIRECTION[0])
+				$vector3 = new Vector3($x, $center_y, $center_z);
+			elseif ($direction_x === self::DIRECTION[1])
+				$vector3 = new Vector3($center_y, $x, $center_z);
+			elseif ($direction_x === self::DIRECTION[2])
+				$vector3 = new Vector3($center_y, $center_z, $x);
 
 			$next_y = 0;
 			$break_y = false;
@@ -89,7 +121,6 @@ class CylinderProcessing extends Processing {
 					if($distanceSq > 1){
 						if($z === 0){
 							if($y === 0){
-								$break_x = true;
 								$break_y = true;
 								break;
 							}
@@ -104,11 +135,22 @@ class CylinderProcessing extends Processing {
 					#		continue;
 					#	}
 					#}
-
-					$this->level->setBlock($vector3->add($x, $y, $z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add($x, -$y, $z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add($x, $y, -$z), $this->set(), false, false);
-					$this->level->setBlock($vector3->add($x, -$y, -$z), $this->set(), false, false);
+					if ($direction_x === self::DIRECTION[0]){
+						$this->level->setBlock($vector3->add(0, $y, $z), $this->set(), false, false);
+						$this->level->setBlock($vector3->add(0, $y, -$z), $this->set(), false, false);
+						$this->level->setBlock($vector3->add(0, -$y, -$z), $this->set(), false, false);
+						$this->level->setBlock($vector3->add(0, -$y, $z), $this->set(), false, false);
+					} elseif ($direction_x === self::DIRECTION[1]) {
+						$this->level->setBlock($vector3->add($y, 0, $z), $this->set(), false, false);
+						$this->level->setBlock($vector3->add($y, 0, -$z), $this->set(), false, false);
+						$this->level->setBlock($vector3->add(-$y, 0, -$z), $this->set(), false, false);
+						$this->level->setBlock($vector3->add(-$y, 0, $z), $this->set(), false, false);
+					} elseif ($direction_x === self::DIRECTION[2]) {
+						$this->level->setBlock($vector3->add($y, $z, 0), $this->set(), false, false);
+						$this->level->setBlock($vector3->add($y, -$z, 0), $this->set(), false, false);
+						$this->level->setBlock($vector3->add(-$y, -$z, 0), $this->set(), false, false);
+						$this->level->setBlock($vector3->add(-$y, $z, 0), $this->set(), false, false);
+					}
 					
 				}
 			}
