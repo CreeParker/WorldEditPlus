@@ -98,7 +98,7 @@ class EventListener implements Listener {
 		$x = TextFormat::RED . $block->x . TextFormat::RESET;
 		$y = TextFormat::GREEN . $block->y . TextFormat::RESET;
 		$z = TextFormat::AQUA . $block->z . TextFormat::RESET;
-		$player->sendMessage(Language::get('book', $name, $id, $meta, $x, $y, $z));
+		$player->sendMessage(Language::get('book.block', $name, $id, $meta, $x, $y, $z));
 	}
 
 	/**
