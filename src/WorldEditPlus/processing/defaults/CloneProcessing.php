@@ -81,20 +81,16 @@ class CloneProcessing extends Processing {
 				for($c = 0; abs($c) < $this->side_z; $c += $this->next_z){
 					$old_z = $this->pos1_z + $c;
 					$new_z = $pos3_z + $c;
-
-					if($this->hasBlockRestriction())
-						yield false;
-
 					$this->checkChunkLoaded($this->level, $old_x, $old_z);
 					$this->checkChunkLoaded($new_level, $new_x, $new_z);
-
 					$old_vector3 = new Vector3($old_x, $old_y, $old_z);
-					$old_block = $this->level->getBlock($old_vector3);
-					if(! $this->$mask($old_block))
-						continue;
 					$new_vector3 = new Vector3($new_x, $new_y, $new_z);
-					if($this->$clone($old_vector3, $new_vector3))
-						$new_level->setBlock($new_vector3, $old_block, false, false);
+					$old_block = $this->level->getBlock($old_vector3);
+					if($this->$mask($old_block))
+						if($this->$clone($old_vector3, $new_vector3))
+							$new_level->setBlock($new_vector3, $old_block, false, false);
+					if($this->hasBlockRestriction())
+						yield false;
 				}
 			}
 			$this->addMeter();

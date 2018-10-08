@@ -65,17 +65,14 @@ class FillProcessing extends Processing {
 					continue;
 				for ($c = 0; abs($c) < $this->side_z; $c += $this->next_z){
 					$z = $this->pos1_z + $c;
-					if ($this->hasBlockRestriction())
-						yield false;
 					$this->checkChunkLoaded($this->level, $x, $z);
 					$vector3 = new Vector3($x, $y, $z);
 					$old_block = $this->level->getBlock($vector3);
 					$new_block = $this->$option($old_block);
-					if ($new_block === null)
-						continue;
-					if ((string) $old_block === (string) $new_block)
-						continue;
-					$this->level->setBlock($vector3, $new_block, false, false);
+					if ($new_block !== null)
+						$this->level->setBlock($vector3, $new_block, false, false);
+					if ($this->hasBlockRestriction())
+						yield false;
 				}
 			}
 			$this->addMeter();

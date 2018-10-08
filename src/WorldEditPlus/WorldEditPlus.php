@@ -51,7 +51,7 @@ class WorldEditPlus extends PluginBase {
 			new BookCommand($this),
 			new CancelCommand($this),
 			new CloneCommand($this),
-			#new CylinderCommand($this),
+			new CylinderCommand($this),
 			new FillCommand($this),
 			new Pos1Command($this),
 			new Pos2Command($this),

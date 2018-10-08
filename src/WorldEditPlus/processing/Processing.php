@@ -66,7 +66,6 @@ abstract class Processing extends Range {
 		$this->id = self::$count++;
 		$this->air = Block::get(BlockIds::AIR);
 		$this->stopper = WorldEditPlus::$instance->getConfig()->get('stopper', null) ?? 500;
-		var_dump($this->stopper);
 	}
 
 	/**
@@ -111,7 +110,8 @@ abstract class Processing extends Range {
 
 		};
 		$id = $this->id;
-		self::$scheduler[$id] = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, 1);
+		$period = WorldEditPlus::$instance->getConfig()->get('period', null) ?? 1;
+		self::$scheduler[$id] = WorldEditPlus::$instance->getScheduler()->scheduleRepeatingTask($task, $period);
 	}
 
 	public function remove() : void {

@@ -22,9 +22,9 @@ use pocketmine\level\Position;
 class Range {
 
 	/** @var int */
-	public $pos1_x;
-	public $pos1_y;
-	public $pos1_z;
+	protected $pos1_x;
+	protected $pos1_y;
+	protected $pos1_z;
 
 	/** @var int */
 	protected $pos2_x;
@@ -46,14 +46,14 @@ class Range {
 	protected $max_z;
 
 	/** @var int */
-	public $side_x;
-	public $side_y;
-	public $side_z;
+	protected $side_x;
+	protected $side_y;
+	protected $side_z;
 	
 	/** @var int */
-	public $next_x;
-	public $next_y;
-	public $next_z;
+	protected $next_x;
+	protected $next_y;
+	protected $next_z;
 
 	/**
 	 * @param Position $pos1
