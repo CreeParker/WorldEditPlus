@@ -63,8 +63,9 @@ class CylinderCommand extends WorldEditPlusCommand {
 				if (! isset($data))
 					return;
 				if ($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])) {
-					$level_pos1 = ($player->wep_pos1 ?? $player)->getLevel();
-					$level_pos2 = ($player->wep_pos2 ?? $player)->getLevel();
+					$name = $player->getLowerCaseName();
+					$level_pos1 = (WorldEditPlus::$pos1[$name] ?? $player)->getLevel();
+					$level_pos2 = (WorldEditPlus::$pos2[$name] ?? $player)->getLevel();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);
 					$pos2 = new Position($data[3], $data[4], $data[5], $level_pos2);
 					$cylinder = new CylinderProcessing($player, $pos1, $pos2, $data[6], CylinderProcessing::DIRECTION[$data[7]]);

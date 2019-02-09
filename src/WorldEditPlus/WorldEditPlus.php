@@ -30,6 +30,11 @@ use pocketmine\plugin\PluginBase;
 
 class WorldEditPlus extends PluginBase {
 
+	public static $pos1;
+
+	public static $pos2;
+
+
 	/** @var WorldEditPlus */
 	public static $instance;
 

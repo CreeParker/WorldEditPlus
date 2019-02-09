@@ -1,6 +1,6 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
-version: 3.0
+version: 3.1
 api: [3.0.0, 4.0.0]
 author: CreeParker (@cree_parker)
 website: https://forum.mcbe.jp/resources/107/

@@ -16,6 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
+use WorldEditPlus\WorldEditPlus as WEP;
 use WorldEditPlus\level\Range;
 
 use pocketmine\event\block\BlockBreakEvent;
@@ -27,6 +28,8 @@ use pocketmine\utils\TextFormat;
 use pocketmine\Player;
 
 class EventListener implements Listener {
+
+	public $time = [];
 
 	/**
 	 * @param BlockBreakEvent $event
@@ -59,10 +62,11 @@ class EventListener implements Listener {
 	 * @param bool $boolean
 	 */
 	public static function setWandPosition(Player $player, Position $position, bool $boolean) : void {
-		$branch = $boolean ? 'wep_pos1' : 'wep_pos2';
-		$player->$branch = $position;
-		if (isset($player->wep_pos1, $player->wep_pos2)) {
-			$range = new Range($player->wep_pos1, $player->wep_pos2);
+		$branch = $boolean ? 'pos1' : 'pos2';
+		$name = $player->getLowerCaseName();
+		WEP::$$branch[$name] = $position;
+		if (isset(WEP::$pos1[$name], WEP::$pos2[$name])) {
+			$range = new Range(WEP::$pos1[$name], WEP::$pos2[$name]);
 			$size = $range->getSize();
 			$message_size = Language::get('wand.size', $size);
 		} else {
@@ -107,9 +111,10 @@ class EventListener implements Listener {
 	 * @return bool
 	 */
 	public function loopInteractMeasures(Player $player) : bool {
-		$time = $player->wep_time ?? 0;
+		$name = $player->getLowerCaseName();
+		$time = $this->time[$name] ?? 0;
 		$difference = $time - microtime(true);
-		$player->wep_time = microtime(true);
+		$this->time[$name] = microtime(true);
 		return $difference > -0.1;
 	}
 

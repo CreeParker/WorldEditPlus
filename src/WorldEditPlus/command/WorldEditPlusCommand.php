@@ -99,12 +99,13 @@ abstract class WorldEditPlusCommand extends Command {
 		}
 		$form = $formapi->createCustomForm($callable);
 		$form->setTitle(Language::get('form.message'));
-		$pos1_x = $sender->wep_pos1->x ?? '';
-		$pos1_y = $sender->wep_pos1->y ?? '';
-		$pos1_z = $sender->wep_pos1->z ?? '';
-		$pos2_x = $sender->wep_pos2->x ?? '';
-		$pos2_y = $sender->wep_pos2->y ?? '';
-		$pos2_z = $sender->wep_pos2->z ?? '';
+		$name = $sender->getLowerCaseName();
+		$pos1_x = WorldEditPlus::$pos1[$name]->x ?? '';
+		$pos1_y = WorldEditPlus::$pos1[$name]->y ?? '';
+		$pos1_z = WorldEditPlus::$pos1[$name]->z ?? '';
+		$pos2_x = WorldEditPlus::$pos2[$name]->x ?? '';
+		$pos2_y = WorldEditPlus::$pos2[$name]->y ?? '';
+		$pos2_z = WorldEditPlus::$pos2[$name]->z ?? '';
 		$form->addInput(TextFormat::RED . Language::get('form.pos.one.x'), 'int', (string) $pos1_x);
 		$form->addInput(TextFormat::GREEN . Language::get('form.pos.one.y'), 'int', (string) $pos1_y);
 		$form->addInput(TextFormat::AQUA . Language::get('form.pos.one.z'), 'int', (string) $pos1_z);
