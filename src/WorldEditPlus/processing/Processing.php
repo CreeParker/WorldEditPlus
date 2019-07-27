@@ -37,8 +37,6 @@ abstract class Processing extends Range {
 
 	public static $scheduler = [];
 
-	private static $count = 0;
-
 	/** @var int */
 	private $id;
 	/** @var CommandSender */
@@ -63,7 +61,8 @@ abstract class Processing extends Range {
 	public function __construct(CommandSender $sender, Position $pos1, Position $pos2) {
 		parent::__construct($pos1, $pos2);
 		$this->sender = $sender;
-		$this->id = self::$count++;
+		static $count = 0;
+		$this->id = $count++;
 		$this->air = Block::get(BlockIds::AIR);
 		$this->stopper = WorldEditPlus::$instance->getConfig()->get('stopper', null) ?? 500;
 	}
