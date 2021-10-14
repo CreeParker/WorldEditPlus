@@ -96,7 +96,7 @@ class Range {
 	 * @return int
 	 */
 	public static function changeInteger($number) : int {
-		return (int) floor(is_string($number) ? (float)$number : $number);
+		return (int) floor(is_string($number) ? (float) $number : $number);
 	}
 
 	/**
