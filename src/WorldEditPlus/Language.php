@@ -70,7 +70,7 @@ class Language {
 		$message = self::$language[$text] ?? self::$fall_language[$text] ?? 'No Message.';
 
 		foreach ($params as $key => $value)
-			$message = str_replace('{%' . $key . '}', $value, $message);
+			$message = str_replace('{%' . $key . '}', (string) $value, $message);
 
 		return $message;
 	}
