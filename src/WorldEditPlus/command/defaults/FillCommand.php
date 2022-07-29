@@ -22,9 +22,9 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 use pocketmine\utils\TextFormat;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class FillCommand extends WorldEditPlusCommand {
@@ -50,7 +50,7 @@ class FillCommand extends WorldEditPlusCommand {
 			if (! isset($args[6]))
 				return false;
 			if ($this->checkNumber($args[0], $args[1], $args[2], $args[3], $args[4], $args[5])) {
-				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
+				$level = ($sender instanceof Player) ? $sender->getWorld() : Server::getInstance()->getWorldManager()->getDefaultWorld();
 				$pos1 = new Position($args[0], $args[1], $args[2], $level);
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
 				$args[7] = $args[7] ?? FillProcessing::OPTION[0];
@@ -65,9 +65,9 @@ class FillCommand extends WorldEditPlusCommand {
 				if (! isset($data))
 					return;
 				if ($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])) {
-					$name = $player->getLowerCaseName();
-					$level_pos1 = (WorldEditPlus::$pos1[$name] ?? $player)->getLevel();
-					$level_pos2 = (WorldEditPlus::$pos2[$name] ?? $player)->getLevel();
+					$name = strtolower($player->getName());
+					$level_pos1 = (WorldEditPlus::$pos1[$name] ?? $player)->getWorld();
+					$level_pos2 = (WorldEditPlus::$pos2[$name] ?? $player)->getWorld();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);
 					$pos2 = new Position($data[3], $data[4], $data[5], $level_pos2);
 					$fill = new FillProcessing($player, $pos1, $pos2, $data[6], FillProcessing::OPTION[$data[7]], $data[8]);

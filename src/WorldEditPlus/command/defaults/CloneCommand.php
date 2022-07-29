@@ -23,9 +23,9 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 use pocketmine\utils\TextFormat;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class CloneCommand extends WorldEditPlusCommand {
@@ -51,7 +51,7 @@ class CloneCommand extends WorldEditPlusCommand {
 			if (! isset($args[8]))
 				return false;
 			if ($this->checkNumber($args[0], $args[1], $args[2], $args[3], $args[4], $args[5], $args[6], $args[7], $args[8])) {
-				$level = ($sender instanceof Player) ? $sender->getLevel() : Server::getInstance()->getDefaultLevel();
+				$level = ($sender instanceof Player) ? $sender->getWorld() : Server::getInstance()->getWorldManager()->getDefaultWorld();
 				$pos1 = new Position($args[0], $args[1], $args[2], $level);
 				$pos2 = new Position($args[3], $args[4], $args[5], $level);
 				$pos3 = new Position($args[6], $args[7], $args[8], $level);
@@ -68,7 +68,7 @@ class CloneCommand extends WorldEditPlusCommand {
 				if (! isset($data))
 					return;
 				if ($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5], $data[6], $data[7], $data[8])) {
-					$name = $player->getLowerCaseName();
+					$name = strtolower($player->getName());
 					$level_pos1 = (WorldEditPlus::$pos1[$name] ?? $player)->getLevel();
 					$level_pos2 = (WorldEditPlus::$pos2[$name] ?? $player)->getLevel();
 					$level_pos3 = $player->getLevel();
@@ -84,9 +84,9 @@ class CloneCommand extends WorldEditPlusCommand {
 			$form = $this->getDefaultForm($callable, $sender);
 			if ($form === null)
 				return false;
-			$form->addInput(TextFormat::RED . Language::get('form.pos.clone.x'), 'int', (string) Range::changeInteger($sender->x));
-			$form->addInput(TextFormat::GREEN . Language::get('form.pos.clone.y'), 'int', (string) Range::changeInteger($sender->y));
-			$form->addInput(TextFormat::AQUA . Language::get('form.pos.clone.z'), 'int', (string) Range::changeInteger($sender->z));
+			$form->addInput(TextFormat::RED . Language::get('form.pos.clone.x'), 'int', (string) Range::changeInteger($sender->getPosition()->x));
+			$form->addInput(TextFormat::GREEN . Language::get('form.pos.clone.y'), 'int', (string) Range::changeInteger($sender->getPosition()->y));
+			$form->addInput(TextFormat::AQUA . Language::get('form.pos.clone.z'), 'int', (string) Range::changeInteger($sender->getPosition()->z));
 			$form->addDropdown(
 				Language::get('form.mask') . TextFormat::EOL.
 				Language::get('form.mask.replace') . TextFormat::EOL.

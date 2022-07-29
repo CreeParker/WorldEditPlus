@@ -20,8 +20,7 @@ use WorldEditPlus\Language;
 use WorldEditPlus\processing\Processing;
 
 use pocketmine\block\Block;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 use pocketmine\math\Vector3;

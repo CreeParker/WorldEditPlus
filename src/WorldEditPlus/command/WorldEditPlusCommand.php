@@ -16,6 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\command;
 
+use pocketmine\lang\Translatable;
 use WorldEditPlus\level\Range;
 use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
@@ -45,8 +46,8 @@ abstract class WorldEditPlusCommand extends Command {
 	 * @param string $commandLabel
 	 * @param array $args
 	 *
-	 * @return mixed
-	 */
+	 * @return bool
+     */
 	public function execute(CommandSender $sender, string $commandLabel, array $args) {
 
 		if (! $this->owner->isEnabled())
@@ -74,14 +75,14 @@ abstract class WorldEditPlusCommand extends Command {
 	/**
 	 * @param string $usage
 	 */
-	public function setUsage(string $usage) : void {
+	public function setUsage(string|Translatable $usage) : void {
 		parent::setUsage(Language::get($usage));
 	}
 
 	/**
 	 * @param string $description
 	 */
-	public function setDescription(string $description) : void {
+	public function setDescription(string|Translatable $description) : void {
 		parent::setDescription(Language::get($description));
 	}
 
@@ -99,7 +100,7 @@ abstract class WorldEditPlusCommand extends Command {
 		}
 		$form = $formapi->createCustomForm($callable);
 		$form->setTitle(Language::get('form.message'));
-		$name = $sender->getLowerCaseName();
+		$name = strtolower($sender->getName());
 		$pos1_x = WorldEditPlus::$pos1[$name]->x ?? '';
 		$pos1_y = WorldEditPlus::$pos1[$name]->y ?? '';
 		$pos1_z = WorldEditPlus::$pos1[$name]->z ?? '';

@@ -16,12 +16,13 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\processing\defaults;
 
+use pocketmine\item\ItemBlock;
 use WorldEditPlus\Language;
 use WorldEditPlus\processing\Processing;
 
 use pocketmine\block\Block;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
+use pocketmine\world\Level;
+use pocketmine\world\Position;
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 use pocketmine\math\Vector3;
@@ -87,9 +88,9 @@ class FillProcessing extends Processing {
 	}
 
 	public function outline(Block $block) : ?Block {
-		$x = $block->x;
-		$y = $block->y;
-		$z = $block->z;
+		$x = $block->getPosition()->x;
+		$y = $block->getPosition()->y;
+		$z = $block->getPosition()->z;
 		if ($x != $this->min_x and $x != $this->max_x)
 			if ($y != $this->min_y and $y != $this->max_y)
 				if ($z != $this->min_z and $z != $this->max_z)
@@ -98,9 +99,9 @@ class FillProcessing extends Processing {
 	}
 
 	public function hollow(Block $block) : Block {
-		$x = $block->x;
-		$y = $block->y;
-		$z = $block->z;
+		$x = $block->getPosition()->x;
+		$y = $block->getPosition()->y;
+		$z = $block->getPosition()->z;
 		if ($x != $this->min_x and $x != $this->max_x)
 			if ($y != $this->min_y and $y != $this->max_y)
 				if ($z != $this->min_z and $z != $this->max_z)

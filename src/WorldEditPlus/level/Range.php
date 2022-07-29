@@ -16,8 +16,8 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\level;
 
-use pocketmine\level\Level;
-use pocketmine\level\Position;
+use pocketmine\world\World;
+use pocketmine\world\Position;
 
 class Range {
 
@@ -69,8 +69,8 @@ class Range {
 		$this->pos2_y = self::changeInteger($pos2->y);
 		$this->pos2_z = self::changeInteger($pos2->z);
 
-		$this->pos1_level = $pos1->getLevel();
-		$this->pos2_level = $pos2->getLevel();
+		$this->pos1_level = $pos1->getWorld();
+		$this->pos2_level = $pos2->getWorld();
 
 		$this->min_x = min($this->pos1_x, $this->pos2_x);
 		$this->min_y = min($this->pos1_y, $this->pos2_y);
@@ -91,11 +91,11 @@ class Range {
 	}
 	
 	/**
-	 * @param int|float|string $number
+	 * @param float|int|string $number
 	 *
 	 * @return int
 	 */
-	public static function changeInteger($number) : int {
+	public static function changeInteger(float|int|string $number) : int {
 		return (int) floor(is_string($number) ? (float) $number : $number);
 	}
 
@@ -127,9 +127,9 @@ class Range {
 	}
 
 	/**
-	 * @return Level
+	 * @return World
 	 */
-	public function getLevel() : Level {
+	public function getLevel() : World {
 		return $this->pos1_level;
 	}
 
@@ -137,7 +137,7 @@ class Range {
 	 * @return bool
 	 */
 	public function isLevel() : bool {
-		return $this->pos1_level == $this->pos2_level;
+		return $this->pos1_level === $this->pos2_level;
 	}
 
 }

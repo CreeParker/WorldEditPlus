@@ -17,24 +17,24 @@ declare(strict_types = 1);
 namespace WorldEditPlus\processing;
 
 use pocketmine\block\Block;
-use pocketmine\level\Level;
+use pocketmine\world\world;
 
 class BackUpClass {
 
-	/** @var Level */
+	/** @var World */
 	public $level;
 
 	/** @var array */
 	public $data = [];
 
 	/**
-	 * @param Level $level
+	 * @param World $level
 	 */
-	public function __construct(Level $level, $owner) {
+	public function __construct(World $level, $owner) {
 		$folder = $owner->getDataFolder();
 		if(!file_exists($folder)) mkdir($folder);
 		$this->db = new \SQLite3($folder.'backup.sqlite3');
-		$this->level = $level->getName();
+		$this->level = $level->getFolderName();
 	}
 
 	/**
@@ -44,9 +44,9 @@ class BackUpClass {
 		$this->data[] = [
 			'id'      => $block->getId(),
 			'meta' => $block->getDamage(),
-			'x'       => $block->x,
-			'y'       => $block->y,
-			'z'       => $block->z
+			'x'       => $block->getPosition()->x,
+			'y'       => $block->getPosition()->y,
+			'z'       => $block->getPosition()->z
 		];
 	}
 

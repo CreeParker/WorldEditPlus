@@ -20,8 +20,7 @@ use WorldEditPlus\Language;
 use WorldEditPlus\processing\Processing;
 
 use pocketmine\block\Block;
-use pocketmine\level\Level;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 use pocketmine\command\CommandSender;
 use pocketmine\utils\TextFormat;
 use pocketmine\math\Vector3;
@@ -128,8 +127,8 @@ class CloneProcessing extends Processing {
 		return true;
 	}
 
-	public function move(Vector3 $old, Vector3 $new) : bool {
-		return $this->level->setBlock($old, $this->air, false, false);
+	public function move(Vector3 $old, Vector3 $new) : void {
+        $this->level->setBlock($old, $this->air, false);
 	}
 
 }
