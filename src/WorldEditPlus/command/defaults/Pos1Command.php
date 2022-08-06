@@ -22,9 +22,9 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 use pocketmine\utils\TextFormat;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 class Pos1Command extends WorldEditPlusCommand {
 
@@ -51,14 +51,14 @@ class Pos1Command extends WorldEditPlusCommand {
 			if (! isset($args[2]))
 				return false;
 			if ($this->checkNumber($args[0], $args[1], $args[2])) {
-				$level = $sender->getLevel();
+				$level = $sender->getWorld();
 				$pos = new Position($args[0], $args[1], $args[2], $level);
 				EventListener::setWandPosition($sender, $pos, true);
 			} else {
 				$sender->sendMessage(TextFormat::RED . Language::get('command.intval.error'));
 			}
 		} else {
-			EventListener::setWandPosition($sender, $sender, true);
+			EventListener::setWandPosition($sender, $sender->getPosition(), true);
 		}
 		return true;
 	}

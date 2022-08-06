@@ -22,9 +22,9 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\worldPosition;
 use pocketmine\utils\TextFormat;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class CylinderCommand extends WorldEditPlusCommand {

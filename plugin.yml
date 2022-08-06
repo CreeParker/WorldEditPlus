@@ -1,6 +1,25 @@
 name: WorldEditPlus
 main: WorldEditPlus\WorldEditPlus
 version: 3.1
-api: [3.0.0, 4.0.0]
+api: 4.0.0
 author: CreeParker (@cree_parker)
 website: https://forum.mcbe.jp/resources/107/
+permissions:
+  worldeditplus.command.book:
+    default: op
+  worldeditplus.command.cancel:
+    default: op
+  worldeditplus.command.clone:
+    default: op
+  worldeditplus.command.cylinder:
+    default: op
+  worldeditplus.command.fill:
+    default: op
+  worldeditplus.command.pos1:
+    default: op
+  worldeditplus.command.pos2:
+    default: op
+  worldeditplus.command.sphere:
+    default: op
+  worldeditplus.command.wand:
+    default: op

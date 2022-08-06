@@ -22,9 +22,9 @@ use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
 
 use pocketmine\command\CommandSender;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 use pocketmine\utils\TextFormat;
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\Server;
 
 class SphereCommand extends WorldEditPlusCommand {
@@ -63,7 +63,7 @@ class SphereCommand extends WorldEditPlusCommand {
 				if (! isset($data))
 					return;
 				if ($this->checkNumber($data[0], $data[1], $data[2], $data[3], $data[4], $data[5])) {
-					$name = $player->getLowerCaseName();
+					$name = strtolower($player->getName());
 					$level_pos1 = (WorldEditPlus::$pos1[$name] ?? $player)->getLevel();
 					$level_pos2 = (WorldEditPlus::$pos2[$name] ?? $player)->getLevel();
 					$pos1 = new Position($data[0], $data[1], $data[2], $level_pos1);

@@ -16,6 +16,7 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus;
 
+use pocketmine\Server;
 use WorldEditPlus\WorldEditPlus as WEP;
 use WorldEditPlus\level\Range;
 
@@ -23,9 +24,9 @@ use pocketmine\event\block\BlockBreakEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\Listener;
 use pocketmine\item\ItemIds;
-use pocketmine\level\Position;
+use pocketmine\world\Position;
 use pocketmine\utils\TextFormat;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 class EventListener implements Listener {
 
@@ -44,14 +45,14 @@ class EventListener implements Listener {
 	 */
 	public function WandEvent($event, bool $boolean) : void {
 		$player = $event->getPlayer();
-		if (! $player->isOp())
+		if (! Server::getInstance()->isOp($player->getName()))
 			return;
 		$item = $event->getItem();
 		$id = $item->getId();
 		$name = $item->getName();
 		if ($id === ItemIds::WOODEN_AXE and $name === Language::get('wand.name')) {
-			$event->setCancelled();
-			$position = $event->getBlock()->asPosition();
+			$event->cancel();
+			$position = $event->getBlock()->getPosition();
 			self::setWandPosition($player, $position, $boolean);
 		}
 	}
@@ -63,7 +64,7 @@ class EventListener implements Listener {
 	 */
 	public static function setWandPosition(Player $player, Position $position, bool $boolean) : void {
 		$branch = $boolean ? 'pos1' : 'pos2';
-		$name = $player->getLowerCaseName();
+		$name = strtolower($player->getName());
 		WEP::$$branch[$name] = $position;
 		if (isset(WEP::$pos1[$name], WEP::$pos2[$name])) {
 			$range = new Range(WEP::$pos1[$name], WEP::$pos2[$name]);
@@ -84,7 +85,7 @@ class EventListener implements Listener {
 	 */
 	public function PlayerInteractEvent(PlayerInteractEvent $event) : void {
 		$action = $event->getAction();
-		if ($action !== PlayerInteractEvent::LEFT_CLICK_BLOCK and $action !== PlayerInteractEvent::RIGHT_CLICK_BLOCK)
+		if ($action !== PlayerInteractEvent::RIGHT_CLICK_BLOCK)
 			return;
 		$player = $event->getPlayer();
 		if ($this->loopInteractMeasures($player))
@@ -99,9 +100,9 @@ class EventListener implements Listener {
 		$name = $block->getName();
 		$id = $block->getId();
 		$meta = $block->getDamage();
-		$x = TextFormat::RED . $block->x . TextFormat::RESET;
-		$y = TextFormat::GREEN . $block->y . TextFormat::RESET;
-		$z = TextFormat::AQUA . $block->z . TextFormat::RESET;
+		$x = TextFormat::RED . $block->getPosition()->x . TextFormat::RESET;
+		$y = TextFormat::GREEN . $block->getPosition()->y . TextFormat::RESET;
+		$z = TextFormat::AQUA . $block->getPosition()->z . TextFormat::RESET;
 		$player->sendMessage(Language::get('book.block', $name, $id, $meta, $x, $y, $z));
 	}
 
@@ -111,7 +112,7 @@ class EventListener implements Listener {
 	 * @return bool
 	 */
 	public function loopInteractMeasures(Player $player) : bool {
-		$name = $player->getLowerCaseName();
+		$name = strtolower($player->getName());
 		$time = $this->time[$name] ?? 0;
 		$difference = $time - microtime(true);
 		$this->time[$name] = microtime(true);

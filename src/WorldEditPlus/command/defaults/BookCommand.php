@@ -16,6 +16,8 @@ declare(strict_types = 1);
 
 namespace WorldEditPlus\command\defaults;
 
+use pocketmine\item\enchantment\VanillaEnchantments;
+use pocketmine\item\VanillaItems;
 use WorldEditPlus\command\WorldEditPlusCommand;
 use WorldEditPlus\Language;
 use WorldEditPlus\WorldEditPlus;
@@ -26,7 +28,7 @@ use pocketmine\item\enchantment\EnchantmentInstance;
 use pocketmine\item\Item;
 use pocketmine\item\ItemIds;
 use pocketmine\utils\TextFormat;
-use pocketmine\Player;
+use pocketmine\player\Player;
 
 class BookCommand extends WorldEditPlusCommand {
 
@@ -48,8 +50,8 @@ class BookCommand extends WorldEditPlusCommand {
 	 */
 	public function onCommand(CommandSender $sender, array $args) : bool {
 		if ($sender instanceof Player) {
-			$item = Item::get(ItemIds::BOOK);
-			$enchant = new EnchantmentInstance(Enchantment::getEnchantment(Enchantment::PROTECTION));
+			$item = VanillaItems::BOOK();
+			$enchant = new EnchantmentInstance(VanillaEnchantments::PROTECTION());
 			$item->addEnchantment($enchant);
 			$item->setCustomName(Language::get('book.name'));
 			$item->setLore([Language::get('book.description')]);
